@@ -1,0 +1,9 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=$HOME/public_html/plugins/generic/kisiZenodo
+    - /bin/mkdir -p "$DEPLOYPATH"
+    - /bin/rm -rf "$DEPLOYPATH"/*
+    - /bin/cp -R classes locale pages templates index.php KisiZenodoPlugin.php README.md version.xml "$DEPLOYPATH"/
+    - /bin/find "$DEPLOYPATH" -type d -exec /bin/chmod 755 {} \;
+    - /bin/find "$DEPLOYPATH" -type f -exec /bin/chmod 644 {} \;

@@ -1,0 +1,93 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: kisiZenodo 1.0.0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "plugins.generic.kisiZenodo.displayName"
+msgstr "Kisi Zenodo DOI Integration"
+
+msgid "plugins.generic.kisiZenodo.description"
+msgstr "Automates 2-stage Zenodo DOI pre-reservation (Production DOCX draft) and final PDF Galley deposit into your Zenodo Community via the InvenioRDM REST API."
+
+msgid "plugins.generic.kisiZenodo.managerAction"
+msgstr "Zenodo DOI Manager"
+
+msgid "plugins.generic.kisiZenodo.settings.title"
+msgstr "Kisi Zenodo DOI Settings"
+
+msgid "plugins.generic.kisiZenodo.settings.saved"
+msgstr "Zenodo DOI integration settings have been saved."
+
+msgid "plugins.generic.kisiZenodo.settings.intro"
+msgstr "Configure Zenodo Sandbox and Production API credentials, target Community slug, and 2-stage workflow automation."
+
+msgid "plugins.generic.kisiZenodo.settings.openManager"
+msgstr "Open Zenodo DOI Manager Dashboard"
+
+msgid "plugins.generic.kisiZenodo.settings.environment"
+msgstr "Active Zenodo Environment"
+
+msgid "plugins.generic.kisiZenodo.settings.environment.sandbox"
+msgstr "Sandbox (sandbox.zenodo.org — Testing DOI 10.5072)"
+
+msgid "plugins.generic.kisiZenodo.settings.environment.production"
+msgstr "Production (zenodo.org — Official DOI 10.5281)"
+
+msgid "plugins.generic.kisiZenodo.settings.environment.help"
+msgstr "Test the complete workflow in Sandbox first before switching to Production."
+
+msgid "plugins.generic.kisiZenodo.settings.sandboxSection"
+msgstr "Zenodo Sandbox Credentials (sandbox.zenodo.org)"
+
+msgid "plugins.generic.kisiZenodo.settings.sandboxToken"
+msgstr "Sandbox Personal Access Token"
+
+msgid "plugins.generic.kisiZenodo.settings.sandboxCommunity"
+msgstr "Sandbox Community Slug (optional)"
+
+msgid "plugins.generic.kisiZenodo.settings.productionSection"
+msgstr "Zenodo Production Credentials (zenodo.org)"
+
+msgid "plugins.generic.kisiZenodo.settings.productionToken"
+msgstr "Production Personal Access Token"
+
+msgid "plugins.generic.kisiZenodo.settings.productionCommunity"
+msgstr "Production Community Slug"
+
+msgid "plugins.generic.kisiZenodo.settings.tokenSavedHint"
+msgstr "Saved in database"
+
+msgid "plugins.generic.kisiZenodo.settings.tokenEmptyHint"
+msgstr "Not configured yet"
+
+msgid "plugins.generic.kisiZenodo.settings.tokenPlaceholderKeep"
+msgstr "Leave blank to keep existing saved token, or paste a new token to replace"
+
+msgid "plugins.generic.kisiZenodo.settings.tokenPlaceholderNew"
+msgstr "Paste Personal Access Token (scopes: deposit:write, deposit:actions)"
+
+msgid "plugins.generic.kisiZenodo.settings.clearToken"
+msgstr "Clear saved token"
+
+msgid "plugins.generic.kisiZenodo.settings.metadataSection"
+msgstr "Journal Metadata Defaults"
+
+msgid "plugins.generic.kisiZenodo.settings.defaultIssn"
+msgstr "Default Journal ISSN"
+
+msgid "plugins.generic.kisiZenodo.settings.defaultLicense"
+msgstr "Default License (SPDX ID)"
+
+msgid "plugins.generic.kisiZenodo.settings.automationSection"
+msgstr "Workflow Automation Rules"
+
+msgid "plugins.generic.kisiZenodo.settings.autoPreReserve"
+msgstr "Stage 1: Automatically create Zenodo draft, upload Production .docx, and pre-reserve DOI when Editor clicks Send To Production"
+
+msgid "plugins.generic.kisiZenodo.settings.autoPublish"
+msgstr "Stage 2: Automatically sync final metadata, upload PDF Galley, and publish to Zenodo Community when article is Published"
+
+msgid "plugins.generic.kisiZenodo.settings.replaceDocxOnPublish"
+msgstr "Remove temporary .docx draft file when uploading the final .pdf Galley before publishing"

@@ -1,0 +1,93 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: kisiZenodo 1.0.0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "plugins.generic.kisiZenodo.displayName"
+msgstr "Integrasi DOI Zenodo Kisi"
+
+msgid "plugins.generic.kisiZenodo.description"
+msgstr "Otomatisasi 2 tahap Pre-Reserve DOI Zenodo (draft DOCX Production) dan publikasi PDF Galley final ke Zenodo Community jurnal melalui InvenioRDM REST API."
+
+msgid "plugins.generic.kisiZenodo.managerAction"
+msgstr "Manajer DOI Zenodo"
+
+msgid "plugins.generic.kisiZenodo.settings.title"
+msgstr "Pengaturan DOI Zenodo Kisi"
+
+msgid "plugins.generic.kisiZenodo.settings.saved"
+msgstr "Pengaturan integrasi DOI Zenodo berhasil disimpan."
+
+msgid "plugins.generic.kisiZenodo.settings.intro"
+msgstr "Konfigurasikan kredensial API Zenodo Sandbox & Production, slug Community tujuan, serta aturan otomatisasi 2 tahap."
+
+msgid "plugins.generic.kisiZenodo.settings.openManager"
+msgstr "Buka Dashboard Manajer DOI Zenodo"
+
+msgid "plugins.generic.kisiZenodo.settings.environment"
+msgstr "Mode Environment Zenodo Aktif"
+
+msgid "plugins.generic.kisiZenodo.settings.environment.sandbox"
+msgstr "Sandbox (sandbox.zenodo.org — Uji Coba DOI 10.5072)"
+
+msgid "plugins.generic.kisiZenodo.settings.environment.production"
+msgstr "Production (zenodo.org — DOI Resmi 10.5281)"
+
+msgid "plugins.generic.kisiZenodo.settings.environment.help"
+msgstr "Uji alur lengkap di Sandbox terlebih dahulu sebelum beralih ke Production."
+
+msgid "plugins.generic.kisiZenodo.settings.sandboxSection"
+msgstr "Kredensial Zenodo Sandbox (sandbox.zenodo.org)"
+
+msgid "plugins.generic.kisiZenodo.settings.sandboxToken"
+msgstr "Personal Access Token Sandbox"
+
+msgid "plugins.generic.kisiZenodo.settings.sandboxCommunity"
+msgstr "Slug Community Sandbox (opsional)"
+
+msgid "plugins.generic.kisiZenodo.settings.productionSection"
+msgstr "Kredensial Zenodo Production (zenodo.org)"
+
+msgid "plugins.generic.kisiZenodo.settings.productionToken"
+msgstr "Personal Access Token Production"
+
+msgid "plugins.generic.kisiZenodo.settings.productionCommunity"
+msgstr "Slug Community Production"
+
+msgid "plugins.generic.kisiZenodo.settings.tokenSavedHint"
+msgstr "Tersimpan di database"
+
+msgid "plugins.generic.kisiZenodo.settings.tokenEmptyHint"
+msgstr "Belum diisi"
+
+msgid "plugins.generic.kisiZenodo.settings.tokenPlaceholderKeep"
+msgstr "Kosongkan jika tidak ingin mengubah token tersimpan, atau tempel token baru"
+
+msgid "plugins.generic.kisiZenodo.settings.tokenPlaceholderNew"
+msgstr "Tempel Personal Access Token (scope: deposit:write, deposit:actions)"
+
+msgid "plugins.generic.kisiZenodo.settings.clearToken"
+msgstr "Hapus token tersimpan"
+
+msgid "plugins.generic.kisiZenodo.settings.metadataSection"
+msgstr "Default Metadata Jurnal"
+
+msgid "plugins.generic.kisiZenodo.settings.defaultIssn"
+msgstr "ISSN Default Jurnal"
+
+msgid "plugins.generic.kisiZenodo.settings.defaultLicense"
+msgstr "Lisensi Default (SPDX ID)"
+
+msgid "plugins.generic.kisiZenodo.settings.automationSection"
+msgstr "Aturan Otomatisasi Workflow"
+
+msgid "plugins.generic.kisiZenodo.settings.autoPreReserve"
+msgstr "Tahap 1: Otomatis buat draft Zenodo, unggah .docx Production, dan Pre-Reserve DOI saat Editor klik Send To Production"
+
+msgid "plugins.generic.kisiZenodo.settings.autoPublish"
+msgstr "Tahap 2: Otomatis sinkronkan metadata final, unggah PDF Galley, dan terbitkan ke Community Zenodo saat artikel di-Publish"
+
+msgid "plugins.generic.kisiZenodo.settings.replaceDocxOnPublish"
+msgstr "Hapus file kerja .docx sementara di draft saat mengunggah file .pdf Galley final sebelum terbit"
