@@ -1,0 +1,383 @@
+/* Scoped styles for Kisi Zenodo DOI Manager inside OJS 3.5 layouts/backend.tpl */
+.kz-manager {
+	--kz-surface: #ffffff;
+	--kz-border: #e2e8f0;
+	--kz-text: #0f172a;
+	--kz-muted: #64748b;
+	--kz-primary: #0284c7;
+	--kz-primary-hover: #0369a1;
+	--kz-emerald: #059669;
+	--kz-emerald-hover: #047857;
+	--kz-amber-bg: #fef3c7;
+	--kz-amber-text: #92400e;
+	--kz-green-bg: #dcfce7;
+	--kz-green-text: #166534;
+	--kz-red-bg: #fee2e2;
+	--kz-red-text: #991b1b;
+	--kz-blue-bg: #e0f2fe;
+	--kz-blue-text: #075985;
+	--kz-purple-bg: #ede9fe;
+	--kz-purple-text: #5b21b6;
+	color: var(--kz-text);
+	font-size: 14px;
+	line-height: 1.5;
+	padding-bottom: 36px;
+}
+
+.kz-manager * {
+	box-sizing: border-box;
+}
+
+.kz-header-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.kz-quick-links {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.kz-quick-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: #ffffff;
+	color: #334155;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	padding: 6px 12px;
+	font-size: 12.5px;
+	font-weight: 600;
+	text-decoration: none;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.kz-quick-link:hover {
+	background: #f8fafc;
+	border-color: #94a3b8;
+	color: #0f172a;
+	text-decoration: none;
+}
+
+.kz-status-strip {
+	background: var(--kz-surface);
+	border: 1px solid var(--kz-border);
+	border-radius: 10px;
+	padding: 15px 18px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 14px;
+	margin-bottom: 16px;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.kz-meta-pills {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.kz-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	padding: 4px 10px;
+	border-radius: 999px;
+	border: 1px solid transparent;
+}
+
+.kz-pill-sandbox {
+	background: var(--kz-amber-bg);
+	color: var(--kz-amber-text);
+	border-color: #fde68a;
+}
+
+.kz-pill-prod {
+	background: var(--kz-green-bg);
+	color: var(--kz-green-text);
+	border-color: #bbf7d0;
+}
+
+.kz-pill-neutral {
+	background: #f1f5f9;
+	color: #334155;
+	border-color: #e2e8f0;
+}
+
+.kz-alert {
+	padding: 12px 16px;
+	border-radius: 8px;
+	margin-bottom: 16px;
+	font-weight: 500;
+	font-size: 13.5px;
+}
+
+.kz-alert-success {
+	background: var(--kz-green-bg);
+	color: var(--kz-green-text);
+	border: 1px solid #86efac;
+}
+
+.kz-alert-error {
+	background: var(--kz-red-bg);
+	color: var(--kz-red-text);
+	border: 1px solid #fca5a5;
+}
+
+.kz-alert-warn {
+	background: var(--kz-amber-bg);
+	color: var(--kz-amber-text);
+	border: 1px solid #fcd34d;
+}
+
+.kz-tabs {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 14px;
+	flex-wrap: wrap;
+}
+
+.kz-tab {
+	text-decoration: none;
+	color: #475569;
+	background: #ffffff;
+	border: 1px solid var(--kz-border);
+	padding: 7px 14px;
+	border-radius: 7px;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.kz-tab:hover {
+	background: #f8fafc;
+	color: #0f172a;
+	text-decoration: none;
+}
+
+.kz-tab.active {
+	background: #0f172a;
+	color: #ffffff;
+	border-color: #0f172a;
+}
+
+.kz-card {
+	background: var(--kz-surface);
+	border: 1px solid var(--kz-border);
+	border-radius: 10px;
+	overflow: hidden;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.kz-table-wrap {
+	overflow-x: auto;
+}
+
+table.kz-table {
+	width: 100%;
+	border-collapse: collapse;
+	text-align: left;
+}
+
+table.kz-table th {
+	background: #f8fafc;
+	color: #475569;
+	font-size: 11.5px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	padding: 12px 15px;
+	border-bottom: 1px solid var(--kz-border);
+}
+
+table.kz-table td {
+	padding: 14px 15px;
+	border-bottom: 1px solid #f1f5f9;
+	vertical-align: top;
+	font-size: 13.5px;
+}
+
+table.kz-table tr:last-child td {
+	border-bottom: none;
+}
+
+.kz-art-title {
+	font-weight: 600;
+	color: #0f172a;
+	margin-bottom: 4px;
+	line-height: 1.4;
+}
+
+.kz-art-title a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.kz-art-title a:hover {
+	color: var(--kz-primary);
+	text-decoration: underline;
+}
+
+.kz-art-meta {
+	font-size: 12px;
+	color: var(--kz-muted);
+}
+
+.kz-badge {
+	display: inline-block;
+	font-size: 11.5px;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 5px;
+}
+
+.kz-badge-prodstage {
+	background: var(--kz-blue-bg);
+	color: var(--kz-blue-text);
+}
+
+.kz-badge-schedstage {
+	background: var(--kz-purple-bg);
+	color: var(--kz-purple-text);
+}
+
+.kz-badge-pubstage {
+	background: var(--kz-green-bg);
+	color: var(--kz-green-text);
+}
+
+.kz-badge-draft {
+	background: var(--kz-amber-bg);
+	color: var(--kz-amber-text);
+}
+
+.kz-badge-none {
+	background: #f1f5f9;
+	color: #64748b;
+}
+
+.kz-badge-error {
+	background: var(--kz-red-bg);
+	color: var(--kz-red-text);
+}
+
+.kz-file-row {
+	font-size: 12px;
+	margin-bottom: 4px;
+	color: #334155;
+}
+
+.kz-file-ok {
+	color: #15803d;
+	font-weight: 600;
+}
+
+.kz-file-miss {
+	color: #94a3b8;
+}
+
+.kz-doi-code {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 12px;
+	background: #f1f5f9;
+	padding: 3px 7px;
+	border-radius: 4px;
+	display: inline-block;
+}
+
+.kz-ojs-sync {
+	font-size: 11.5px;
+	color: #475569;
+	margin-bottom: 6px;
+}
+
+.kz-err-box {
+	margin-top: 6px;
+	padding: 7px 9px;
+	background: #fef2f2;
+	border: 1px solid #fecaca;
+	border-radius: 5px;
+	color: #991b1b;
+	font-size: 11.5px;
+	max-width: 320px;
+	word-break: break-word;
+}
+
+.kz-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 7px;
+	min-width: 185px;
+}
+
+.kz-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	width: 100%;
+	border: none;
+	border-radius: 6px;
+	padding: 8px 12px;
+	font-size: 12.5px;
+	font-weight: 600;
+	cursor: pointer;
+	text-decoration: none;
+	transition: background 0.15s;
+}
+
+.kz-btn-blue {
+	background: var(--kz-primary);
+	color: #ffffff;
+}
+
+.kz-btn-blue:hover {
+	background: var(--kz-primary-hover);
+	color: #ffffff;
+}
+
+.kz-btn-green {
+	background: var(--kz-emerald);
+	color: #ffffff;
+}
+
+.kz-btn-green:hover {
+	background: var(--kz-emerald-hover);
+	color: #ffffff;
+}
+
+.kz-btn-outline {
+	background: #ffffff;
+	color: #334155;
+	border: 1px solid #cbd5e1;
+	width: auto;
+}
+
+.kz-btn-outline:hover {
+	background: #f8fafc;
+	border-color: #94a3b8;
+	color: #0f172a;
+	text-decoration: none;
+}
+
+.kz-btn[disabled] {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.kz-empty {
+	padding: 40px 20px;
+	text-align: center;
+	color: var(--kz-muted);
+}

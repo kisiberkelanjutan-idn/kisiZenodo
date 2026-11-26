@@ -29,6 +29,8 @@ use APP\plugins\generic\kisiZenodo\classes\migration\KisiZenodoMigration;
 use APP\plugins\generic\kisiZenodo\classes\ZenodoApiClient;
 use APP\plugins\generic\kisiZenodo\classes\ZenodoDepositService;
 use APP\plugins\generic\kisiZenodo\pages\KisiZenodoHandler;
+use APP\submission\Submission;
+use APP\template\TemplateManager;
 use Illuminate\Database\Migrations\Migration;
 use PKP\core\JSONMessage;
 use PKP\core\PKPApplication;
@@ -38,6 +40,7 @@ use PKP\linkAction\request\RedirectAction;
 use PKP\notification\Notification;
 use PKP\plugins\GenericPlugin;
 use PKP\plugins\Hook;
+use PKP\security\Role;
 
 class KisiZenodoPlugin extends GenericPlugin
 {
@@ -58,6 +61,7 @@ class KisiZenodoPlugin extends GenericPlugin
             Hook::add('Decision::add', [$this, 'onDecisionAdded']);
             Hook::add('Publication::publish', [$this, 'onPublicationPublished']);
             Hook::add('LoadHandler', [$this, 'loadPageHandler']);
+            Hook::add('TemplateManager::setupBackendPage', [$this, 'setupBackendMenu']);
         }
 
         return true;
@@ -215,6 +219,10 @@ class KisiZenodoPlugin extends GenericPlugin
                 return Hook::CONTINUE;
             }
 
+            if ((int) $newPublication->getData('status') !== Submission::STATUS_PUBLISHED) {
+                return Hook::CONTINUE;
+            }
+
             if (!is_object($submission)) {
                 $subId = (int) $newPublication->getData('submissionId');
                 if ($subId > 0) {
@@ -262,6 +270,91 @@ class KisiZenodoPlugin extends GenericPlugin
 
         $args[3] = new KisiZenodoHandler($this);
         return Hook::ABORT;
+    }
+
+    /**
+     * Hook `TemplateManager::setupBackendPage`: Inject "Zenodo DOI" into OJS 3.5's left sidebar navigation.
+     */
+    public function setupBackendMenu(string $hookName, array $args)
+    {
+        try {
+            $request = Application::get()->getRequest();
+            $context = $request ? $request->getContext() : null;
+            $user = $request ? $request->getUser() : null;
+            if (!$request || !$context || !$user) {
+                return Hook::CONTINUE;
+            }
+
+            $contextId = (int) $context->getId();
+            if (!$this->getEnabled($contextId)) {
+                return Hook::CONTINUE;
+            }
+
+            $router = $request->getRouter();
+            $handler = ($router && method_exists($router, 'getHandler')) ? $router->getHandler() : null;
+            $userRoles = $handler
+                ? (array) $handler->getAuthorizedContextObject(Application::ASSOC_TYPE_USER_ROLES)
+                : [];
+
+            if (empty($userRoles) && method_exists($user, 'getRoles')) {
+                foreach ((array) $user->getRoles($contextId) as $roleObj) {
+                    if (is_object($roleObj) && method_exists($roleObj, 'getId')) {
+                        $userRoles[] = (int) $roleObj->getId();
+                    }
+                }
+            }
+
+            $allowedRoles = [
+                Role::ROLE_ID_SITE_ADMIN,
+                Role::ROLE_ID_MANAGER,
+                Role::ROLE_ID_SUB_EDITOR,
+            ];
+            if (!array_intersect($allowedRoles, $userRoles)) {
+                return Hook::CONTINUE;
+            }
+
+            $dispatcher = $request->getDispatcher();
+            if (!$dispatcher) {
+                return Hook::CONTINUE;
+            }
+
+            $templateMgr = TemplateManager::getManager($request);
+            $menu = (array) $templateMgr->getState('menu');
+
+            $zenodoItem = [
+                'name' => __('plugins.generic.kisiZenodo.sidebarMenu'),
+                'url' => $dispatcher->url($request, PKPApplication::ROUTE_PAGE, $context->getPath(), 'kisiZenodo', 'index'),
+                'isCurrent' => $request->getRequestedPage() === 'kisiZenodo',
+                'icon' => 'NavDoi',
+            ];
+
+            $keys = array_keys($menu);
+            $doisIdx = array_search('dois', $keys, true);
+            $settingsIdx = array_search('settings', $keys, true);
+            $statsIdx = array_search('statistics', $keys, true);
+
+            if ($doisIdx !== false) {
+                $menu = array_slice($menu, 0, $doisIdx + 1, true)
+                    + ['kisiZenodo' => $zenodoItem]
+                    + array_slice($menu, $doisIdx + 1, null, true);
+            } elseif ($settingsIdx !== false) {
+                $menu = array_slice($menu, 0, $settingsIdx, true)
+                    + ['kisiZenodo' => $zenodoItem]
+                    + array_slice($menu, $settingsIdx, null, true);
+            } elseif ($statsIdx !== false) {
+                $menu = array_slice($menu, 0, $statsIdx, true)
+                    + ['kisiZenodo' => $zenodoItem]
+                    + array_slice($menu, $statsIdx, null, true);
+            } else {
+                $menu['kisiZenodo'] = $zenodoItem;
+            }
+
+            $templateMgr->setState(['menu' => $menu]);
+        } catch (\Throwable $e) {
+            error_log('[kisiZenodo] Failed injecting backend sidebar menu: ' . $e->getMessage());
+        }
+
+        return Hook::CONTINUE;
     }
 
     /**

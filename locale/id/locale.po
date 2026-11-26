@@ -14,6 +14,9 @@ msgstr "Otomatisasi 2 tahap Pre-Reserve DOI Zenodo (draft DOCX Production) dan p
 msgid "plugins.generic.kisiZenodo.managerAction"
 msgstr "Manajer DOI Zenodo"
 
+msgid "plugins.generic.kisiZenodo.sidebarMenu"
+msgstr "Zenodo DOI"
+
 msgid "plugins.generic.kisiZenodo.settings.title"
 msgstr "Pengaturan DOI Zenodo Kisi"
 

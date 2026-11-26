@@ -3,8 +3,9 @@
 /**
  * @file plugins/generic/kisiZenodo/pages/KisiZenodoHandler.php
  *
- * Editorial dashboard handler (`/index.php/{journal}/kisiZenodo`) for testing Zenodo API connectivity,
- * viewing Production & Published manuscripts, and triggering 1-click DOI pre-reservation or publication.
+ * Editorial backend dashboard handler (`/index.php/{journal}/kisiZenodo`) integrated into OJS 3.5's
+ * native backend sidebar layout for testing Zenodo API connectivity, viewing Production & Published
+ * manuscripts, and triggering 1-click DOI pre-reservation or publication.
  */
 
 namespace APP\plugins\generic\kisiZenodo\pages;
@@ -19,13 +20,17 @@ use APP\plugins\generic\kisiZenodo\KisiZenodoPlugin;
 use APP\submission\Submission;
 use APP\template\TemplateManager;
 use Illuminate\Support\Facades\DB;
+use PKP\context\Context;
 use PKP\core\PKPApplication;
+use PKP\doi\Doi;
 use PKP\security\authorization\ContextAccessPolicy;
 use PKP\security\authorization\RoleBasedHandlerOperationPolicy;
 use PKP\security\Role;
 
 class KisiZenodoHandler extends Handler
 {
+    public $_isBackendPage = true;
+
     private KisiZenodoPlugin $plugin;
 
     public function __construct(KisiZenodoPlugin $plugin)
@@ -64,7 +69,7 @@ class KisiZenodoHandler extends Handler
     }
 
     /**
-     * Render the Zenodo DOI Manager dashboard.
+     * Render the Zenodo DOI Manager dashboard inside OJS 3.5's native backend layout (`layouts/backend.tpl`).
      */
     public function index($args, $request): void
     {
@@ -73,6 +78,8 @@ class KisiZenodoHandler extends Handler
             $request->redirect(null, 'index');
             return;
         }
+
+        $this->setupTemplate($request);
 
         $contextId = (int) $context->getId();
         $contextPath = $context->getPath();
@@ -94,7 +101,7 @@ class KisiZenodoHandler extends Handler
             ->where('context_id', $contextId)
             ->where(static function ($q) use ($prodStageId): void {
                 $q->where('stage_id', $prodStageId)
-                    ->orWhere('status', Submission::STATUS_PUBLISHED);
+                    ->orWhereIn('status', [Submission::STATUS_PUBLISHED, Submission::STATUS_SCHEDULED]);
             })
             ->orderByDesc('submission_id')
             ->limit(150)
@@ -137,8 +144,12 @@ class KisiZenodoHandler extends Handler
                 continue;
             }
 
-            $isPublished = ((int) $submission->getData('status') === Submission::STATUS_PUBLISHED);
+            $subStatus = (int) $submission->getData('status');
+            $pubStatus = (int) $publication->getData('status');
+            $isPublished = ($subStatus === Submission::STATUS_PUBLISHED || $pubStatus === Submission::STATUS_PUBLISHED);
+            $isScheduled = !$isPublished && ($subStatus === Submission::STATUS_SCHEDULED || $pubStatus === Submission::STATUS_SCHEDULED);
             $stageId = (int) $submission->getData('stageId');
+
             $dep = $depositsBySubId[$subId] ?? null;
             $depStatus = $dep ? (string) $dep->status : 'none';
             $hasError = $dep && !empty($dep->last_error);
@@ -146,14 +157,14 @@ class KisiZenodoHandler extends Handler
             $counts['all']++;
             if ($isPublished) {
                 $counts['published']++;
-            } elseif ($stageId === $prodStageId) {
+            } elseif ($stageId === $prodStageId || $isScheduled) {
                 $counts['production']++;
             }
             if ($hasError || $depStatus === 'error') {
                 $counts['error']++;
             }
 
-            if ($filter === 'production' && ($isPublished || $stageId !== $prodStageId)) {
+            if ($filter === 'production' && ($isPublished || ($stageId !== $prodStageId && !$isScheduled))) {
                 continue;
             }
             if ($filter === 'published' && !$isPublished) {
@@ -168,16 +179,29 @@ class KisiZenodoHandler extends Handler
                 ? (string) $publication->getShortAuthorString()
                 : '';
 
+            $doiId = (int) ($publication->getData('doiId') ?? 0);
             $currentDoi = '';
-            if (method_exists($publication, 'getDoi')) {
-                $currentDoi = trim((string) $publication->getDoi());
-            }
-            if ($currentDoi === '') {
-                $doiId = (int) ($publication->getData('doiId') ?? 0);
-                if ($doiId > 0) {
-                    $currentDoi = trim((string) (DB::table('dois')->where('doi_id', $doiId)->value('doi') ?? ''));
+            $ojsDoiStatus = 0;
+
+            if ($doiId > 0) {
+                $doiRow = DB::table('dois')->where('doi_id', $doiId)->first();
+                if ($doiRow) {
+                    $currentDoi = trim((string) ($doiRow->doi ?? ''));
+                    $ojsDoiStatus = (int) ($doiRow->status ?? 0);
                 }
             }
+            if ($currentDoi === '' && method_exists($publication, 'getDoi')) {
+                $currentDoi = trim((string) $publication->getDoi());
+            }
+
+            $ojsDoiStatusLabel = match ($ojsDoiStatus) {
+                Doi::STATUS_REGISTERED => 'Registered (Terdaftar)',
+                Doi::STATUS_UNREGISTERED => 'Unregistered (Draft)',
+                Doi::STATUS_SUBMITTED => 'Submitted',
+                Doi::STATUS_STALE => 'Needs Sync (Stale)',
+                Doi::STATUS_ERROR => 'Error',
+                default => ($currentDoi !== '' ? 'Tersimpan' : '-'),
+            };
 
             $docxFile = $service->findProductionReadyFile($subId);
             $pdfFile = $service->findPdfGalleyFile($publication, $subId);
@@ -196,12 +220,13 @@ class KisiZenodoHandler extends Handler
                 'title' => $title,
                 'authors' => $authorsStr,
                 'isPublished' => $isPublished,
-                'stageLabel' => $isPublished ? 'Published' : 'Production',
+                'isScheduled' => $isScheduled,
                 'docxReady' => ($docxFile !== null),
                 'docxName' => $docxLabel,
                 'pdfReady' => ($pdfFile !== null),
                 'pdfName' => $pdfLabel,
                 'ojsDoi' => $currentDoi,
+                'ojsDoiStatusLabel' => $ojsDoiStatusLabel,
                 'depositStatus' => $depStatus,
                 'reservedDoi' => $dep ? (string) ($dep->reserved_doi ?? '') : '',
                 'recordId' => $recordId,
@@ -214,13 +239,28 @@ class KisiZenodoHandler extends Handler
             ];
         }
 
+        $ojsDoisEnabled = (bool) $context->getData(Context::SETTING_ENABLE_DOIS)
+            && !empty($context->getData(Context::SETTING_ENABLED_DOI_TYPES));
+
+        $userRoles = (array) $this->getAuthorizedContextObject(Application::ASSOC_TYPE_USER_ROLES);
+        $canManageDois = (bool) array_intersect([Role::ROLE_ID_SITE_ADMIN, Role::ROLE_ID_MANAGER], $userRoles);
+
         $templateMgr = TemplateManager::getManager($request);
+        $templateMgr->addStyleSheet(
+            'kisiZenodoManager',
+            $request->getBaseUrl() . '/' . $this->plugin->getPluginPath() . '/styles/manager.css',
+            ['contexts' => 'backend']
+        );
+
         $templateMgr->assign([
+            'pageTitle' => 'plugins.generic.kisiZenodo.managerAction',
+            'pageWidth' => TemplateManager::PAGE_WIDTH_WIDE,
             'journalName' => (string) $context->getLocalizedName(),
             'environment' => $env,
             'webBaseUrl' => $client->getWebBaseUrl(),
             'communitySlug' => $settings['communitySlug'],
             'hasToken' => ($settings['token'] !== ''),
+            'ojsDoisEnabled' => $ojsDoisEnabled,
             'autoPreReserve' => $settings['autoPreReserve'],
             'autoPublish' => $settings['autoPublish'],
             'replaceDocxOnPublish' => $settings['replaceDocxOnPublish'],
@@ -233,7 +273,10 @@ class KisiZenodoHandler extends Handler
                 'testConnection' => $dispatcher->url($request, PKPApplication::ROUTE_PAGE, $contextPath, 'kisiZenodo', 'testConnection'),
                 'preReserve' => $dispatcher->url($request, PKPApplication::ROUTE_PAGE, $contextPath, 'kisiZenodo', 'preReserve'),
                 'publishDoi' => $dispatcher->url($request, PKPApplication::ROUTE_PAGE, $contextPath, 'kisiZenodo', 'publishDoi'),
-                'submissions' => $dispatcher->url($request, PKPApplication::ROUTE_PAGE, $contextPath, 'submissions'),
+                'nativeDois' => ($ojsDoisEnabled && $canManageDois)
+                    ? $dispatcher->url($request, PKPApplication::ROUTE_PAGE, $contextPath, 'dois')
+                    : '',
+                'doiDistributionSettings' => $dispatcher->url($request, PKPApplication::ROUTE_PAGE, $contextPath, 'management', 'settings', ['distribution']) . '#dois',
                 'pluginsSettings' => $dispatcher->url($request, PKPApplication::ROUTE_PAGE, $contextPath, 'management', 'settings', ['website']),
             ],
         ]);
@@ -296,7 +339,7 @@ class KisiZenodoHandler extends Handler
             $this->setFlash(
                 $request,
                 'success',
-                "Pre-Reserve DOI berhasil untuk Submission #{$submissionId}: DOI {$result['doi']} (Zenodo Draft #{$result['recordId']}) telah disimpan ke OJS."
+                "Pre-Reserve DOI berhasil untuk Submission #{$submissionId}: DOI {$result['doi']} (Zenodo Draft #{$result['recordId']}) telah disinkronkan ke OJS."
             );
         } catch (\Throwable $e) {
             $this->setFlash(
@@ -339,7 +382,7 @@ class KisiZenodoHandler extends Handler
             $this->setFlash(
                 $request,
                 'success',
-                "Publikasi Zenodo berhasil untuk Submission #{$submissionId}: DOI {$result['doi']} kini aktif permanen (Record #{$result['recordId']})."
+                "Publikasi Zenodo berhasil untuk Submission #{$submissionId}: DOI {$result['doi']} kini aktif permanen (Record #{$result['recordId']}) & berstatus Registered di OJS."
             );
         } catch (\Throwable $e) {
             $this->setFlash(

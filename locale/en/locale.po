@@ -14,6 +14,9 @@ msgstr "Automates 2-stage Zenodo DOI pre-reservation (Production DOCX draft) and
 msgid "plugins.generic.kisiZenodo.managerAction"
 msgstr "Zenodo DOI Manager"
 
+msgid "plugins.generic.kisiZenodo.sidebarMenu"
+msgstr "Zenodo DOI"
+
 msgid "plugins.generic.kisiZenodo.settings.title"
 msgstr "Kisi Zenodo DOI Settings"
 

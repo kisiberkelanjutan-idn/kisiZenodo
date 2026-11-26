@@ -132,7 +132,7 @@ class ZenodoDepositService
                 'reused' => false,
             ];
         } catch (\Throwable $e) {
-            $this->recordError($contextId, $submissionId, $pubId, $env, $e->getMessage());
+            $this->recordError($contextId, $submissionId, $pubId, $env, $e->getMessage(), false);
             throw $e;
         }
     }
@@ -245,7 +245,7 @@ class ZenodoDepositService
                 'reused' => false,
             ];
         } catch (\Throwable $e) {
-            $this->recordError($contextId, $submissionId, $pubId, $env, $e->getMessage());
+            $this->recordError($contextId, $submissionId, $pubId, $env, $e->getMessage(), true);
             throw $e;
         }
     }
@@ -432,6 +432,7 @@ class ZenodoDepositService
 
         $pubId = (int) $publication->getId();
         $currentDoiId = (int) ($publication->getData('doiId') ?? 0);
+        $doiId = 0;
 
         try {
             if ($currentDoiId > 0) {
@@ -440,35 +441,45 @@ class ZenodoDepositService
                     Repo::doi()->edit($doiObj, [
                         'doi' => $cleanDoi,
                         'status' => $doiStatus,
+                        'registrationAgency' => null,
                     ]);
-                    $publication->setData('doiId', $currentDoiId);
-                    return;
+                    $doiId = $currentDoiId;
                 }
             }
 
-            $existingRow = DB::table('dois')
-                ->where('context_id', $contextId)
-                ->where('doi', $cleanDoi)
-                ->first();
+            if ($doiId <= 0) {
+                $existingRow = DB::table('dois')
+                    ->where('context_id', $contextId)
+                    ->where('doi', $cleanDoi)
+                    ->first();
 
-            if ($existingRow) {
-                $doiId = (int) $existingRow->doi_id;
-                DB::table('dois')->where('doi_id', $doiId)->update(['status' => $doiStatus]);
-            } else {
-                $newDoi = Repo::doi()->newDataObject([
-                    'contextId' => $contextId,
-                    'doi' => $cleanDoi,
-                    'status' => $doiStatus,
-                ]);
-                $doiId = (int) Repo::doi()->add($newDoi);
+                if ($existingRow) {
+                    $doiId = (int) $existingRow->doi_id;
+                    $existingObj = Repo::doi()->get($doiId, $contextId);
+                    if ($existingObj) {
+                        Repo::doi()->edit($existingObj, [
+                            'status' => $doiStatus,
+                            'registrationAgency' => null,
+                        ]);
+                    } else {
+                        DB::table('dois')->where('doi_id', $doiId)->update(['status' => $doiStatus]);
+                    }
+                } else {
+                    $newDoi = Repo::doi()->newDataObject([
+                        'contextId' => $contextId,
+                        'doi' => $cleanDoi,
+                        'status' => $doiStatus,
+                        'registrationAgency' => null,
+                    ]);
+                    $doiId = (int) Repo::doi()->add($newDoi);
+                }
+
+                DB::table('publications')
+                    ->where('publication_id', $pubId)
+                    ->update(['doi_id' => $doiId]);
             }
-
-            DB::table('publications')
-                ->where('publication_id', $pubId)
-                ->update(['doi_id' => $doiId]);
-            $publication->setData('doiId', $doiId);
         } catch (\Throwable $e) {
-            // Direct database fallback in case OJS core prefix settings differ from Sandbox 10.5072
+            // Direct database fallback in case OJS core prefix validation differs from Sandbox 10.5072
             $row = DB::table('dois')
                 ->where('context_id', $contextId)
                 ->where('doi', $cleanDoi)
@@ -488,7 +499,18 @@ class ZenodoDepositService
             DB::table('publications')
                 ->where('publication_id', $pubId)
                 ->update(['doi_id' => $doiId]);
+        }
+
+        if ($doiId > 0) {
             $publication->setData('doiId', $doiId);
+            try {
+                $freshDoi = Repo::doi()->get($doiId, $contextId);
+                if ($freshDoi) {
+                    $publication->setData('doiObject', $freshDoi);
+                }
+            } catch (\Throwable $ignored) {
+                // Ignore in-memory refresh error
+            }
         }
     }
 
@@ -517,8 +539,14 @@ class ZenodoDepositService
         }
     }
 
-    private function recordError(int $contextId, int $submissionId, int $pubId, string $environment, string $errorMsg): void
-    {
+    private function recordError(
+        int $contextId,
+        int $submissionId,
+        int $pubId,
+        string $environment,
+        string $errorMsg,
+        bool $markOjsDoiError = false
+    ): void {
         try {
             $existing = $this->getDepositRecord($contextId, $submissionId, $environment);
             $keepStatus = ($existing && in_array($existing->status, ['draft_reserved', 'published'], true))
@@ -530,6 +558,15 @@ class ZenodoDepositService
                 'status' => $keepStatus,
                 'last_error' => substr($errorMsg, 0, 2000),
             ]);
+
+            if ($markOjsDoiError && (!$existing || $existing->status !== 'published')) {
+                $doiId = (int) (DB::table('publications')->where('publication_id', $pubId)->value('doi_id') ?? 0);
+                if ($doiId > 0) {
+                    DB::table('dois')->where('doi_id', $doiId)->where('context_id', $contextId)->update([
+                        'status' => Doi::STATUS_ERROR,
+                    ]);
+                }
+            }
         } catch (\Throwable $ignored) {
             // Never throw inside error logger
         }
