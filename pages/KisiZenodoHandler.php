@@ -239,9 +239,12 @@ class KisiZenodoHandler extends Handler
         $integrity = (new ZenodoIntegrityChecker())->verifyAll();
 
         $templateMgr = TemplateManager::getManager($request);
+        $managerCssFile = dirname(__DIR__) . '/styles/manager.css';
+        $managerCssVersion = is_file($managerCssFile) ? (string) filemtime($managerCssFile) : '';
         $templateMgr->addStyleSheet(
             'kisiZenodoManager',
-            $request->getBaseUrl() . '/' . $this->plugin->getPluginPath() . '/styles/manager.css',
+            $request->getBaseUrl() . '/' . $this->plugin->getPluginPath() . '/styles/manager.css'
+                . ($managerCssVersion !== '' ? '?v=' . $managerCssVersion : ''),
             ['contexts' => 'backend']
         );
 
