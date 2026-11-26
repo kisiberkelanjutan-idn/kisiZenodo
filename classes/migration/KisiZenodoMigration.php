@@ -1,11 +1,5 @@
 <?php
 
-/**
- * @file plugins/generic/kisiZenodo/classes/migration/KisiZenodoMigration.php
- *
- * Idempotent schema installer for tracking Zenodo draft reservations and published deposits.
- */
-
 namespace APP\plugins\generic\kisiZenodo\classes\migration;
 
 use Illuminate\Database\Migrations\Migration;
@@ -45,6 +39,6 @@ class KisiZenodoMigration extends Migration
 
     public function down(): void
     {
-        // Intentionally preserve deposit DOI mapping records when plugin is disabled/reloaded.
+
     }
 }

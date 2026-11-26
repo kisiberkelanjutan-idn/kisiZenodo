@@ -1,12 +1,5 @@
 <?php
 
-/**
- * @file plugins/generic/kisiZenodo/KisiZenodoPlugin.php
- *
- * Standalone OJS 3.5 Generic Plugin automating 2-stage Zenodo DOI reservation (Production DOCX draft)
- * and final PDF Galley deposit into Zenodo Community `kisibsmk` via InvenioRDM v1 REST API.
- */
-
 namespace APP\plugins\generic\kisiZenodo;
 
 spl_autoload_register(static function (string $class): void {
@@ -47,9 +40,6 @@ class KisiZenodoPlugin extends GenericPlugin
 {
     private bool $schemaChecked = false;
 
-    /**
-     * @copydoc Plugin::register()
-     */
     public function register($category, $path, $mainContextId = null): bool
     {
         $success = parent::register($category, $path, $mainContextId);
@@ -83,9 +73,6 @@ class KisiZenodoPlugin extends GenericPlugin
         return new KisiZenodoMigration();
     }
 
-    /**
-     * Ensure tracking table exists even when plugin files were deployed directly via cPanel Git without CLI upgrade.
-     */
     public function ensureDatabaseSchema(): void
     {
         if ($this->schemaChecked) {
@@ -100,9 +87,6 @@ class KisiZenodoPlugin extends GenericPlugin
         }
     }
 
-    /**
-     * Return normalized plugin settings for a given journal context.
-     */
     public function getEffectiveSettings(int $contextId): array
     {
         $rawEnv = (string) ($this->getSetting($contextId, 'environment') ?? ZenodoApiClient::ENV_SANDBOX);
@@ -162,10 +146,6 @@ class KisiZenodoPlugin extends GenericPlugin
         ];
     }
 
-    /**
-     * Hook `Decision::add`: Automatically run Stage 1 (Pre-Reserve DOI + upload Production DOCX)
-     * when an Editor sends a manuscript from Copyediting to Production.
-     */
     public function onDecisionAdded(string $hookName, array $args)
     {
         $submissionId = 0;
@@ -213,10 +193,6 @@ class KisiZenodoPlugin extends GenericPlugin
         return Hook::CONTINUE;
     }
 
-    /**
-     * Hook `Publication::publish`: Automatically run Stage 2 (update metadata, swap DOCX -> PDF Galley,
-     * and publish into Zenodo Community) when an article is published in OJS.
-     */
     public function onPublicationPublished(string $hookName, array $args)
     {
         $submissionId = 0;
@@ -267,9 +243,6 @@ class KisiZenodoPlugin extends GenericPlugin
         return Hook::CONTINUE;
     }
 
-    /**
-     * Hook `LoadHandler`: Route `/index.php/{journal}/kisiZenodo/*` to `KisiZenodoHandler`.
-     */
     public function loadPageHandler(string $hookName, array $args)
     {
         $page = (string) ($args[0] ?? '');
@@ -281,9 +254,6 @@ class KisiZenodoPlugin extends GenericPlugin
         return Hook::ABORT;
     }
 
-    /**
-     * Hook `TemplateManager::setupBackendPage`: Inject "Zenodo DOI" into OJS 3.5's left sidebar navigation.
-     */
     public function setupBackendMenu(string $hookName, array $args)
     {
         try {
@@ -366,9 +336,6 @@ class KisiZenodoPlugin extends GenericPlugin
         return Hook::CONTINUE;
     }
 
-    /**
-     * @copydoc Plugin::getActions()
-     */
     public function getActions($request, $verb): array
     {
         $actions = parent::getActions($request, $verb);
@@ -418,9 +385,6 @@ class KisiZenodoPlugin extends GenericPlugin
         return array_merge($pluginActions, $actions);
     }
 
-    /**
-     * @copydoc Plugin::manage()
-     */
     public function manage($args, $request)
     {
         switch ($request->getUserVar('verb')) {

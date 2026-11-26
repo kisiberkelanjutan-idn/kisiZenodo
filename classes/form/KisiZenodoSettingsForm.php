@@ -1,11 +1,5 @@
 <?php
 
-/**
- * @file plugins/generic/kisiZenodo/classes/form/KisiZenodoSettingsForm.php
- *
- * Settings modal form for Kisi Zenodo DOI Integration Plugin (with cryptographic Activation Token guard).
- */
-
 namespace APP\plugins\generic\kisiZenodo\classes\form;
 
 use APP\core\Application;
@@ -164,7 +158,6 @@ class KisiZenodoSettingsForm extends Form
 
         $this->plugin->updateSetting($this->contextId, 'environment', $env, 'string');
 
-        // Preserve existing Sandbox token when password field is left blank unless Clear is ticked
         $newSandboxToken = ZenodoApiClient::sanitizeToken((string) $this->getData('sandboxToken'));
         if (!empty($this->getData('clearSandboxToken'))) {
             $this->plugin->updateSetting($this->contextId, 'sandboxToken', '', 'string');
@@ -172,7 +165,6 @@ class KisiZenodoSettingsForm extends Form
             $this->plugin->updateSetting($this->contextId, 'sandboxToken', $newSandboxToken, 'string');
         }
 
-        // Preserve existing Production token when password field is left blank unless Clear is ticked
         $newProdToken = ZenodoApiClient::sanitizeToken((string) $this->getData('productionToken'));
         if (!empty($this->getData('clearProductionToken'))) {
             $this->plugin->updateSetting($this->contextId, 'productionToken', '', 'string');
@@ -199,9 +191,6 @@ class KisiZenodoSettingsForm extends Form
         return parent::execute(...$functionArgs);
     }
 
-    /**
-     * Allow pasting either a full Zenodo Community URL (`https://zenodo.org/communities/kisibsmk`) or slug (`kisibsmk`).
-     */
     private function normalizeCommunitySlug(string $raw): string
     {
         $val = trim($raw);

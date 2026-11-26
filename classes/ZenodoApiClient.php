@@ -1,11 +1,5 @@
 <?php
 
-/**
- * @file plugins/generic/kisiZenodo/classes/ZenodoApiClient.php
- *
- * InvenioRDM v1 REST API client for Zenodo & Zenodo Sandbox.
- */
-
 namespace APP\plugins\generic\kisiZenodo\classes;
 
 use Illuminate\Support\Facades\Cache;
@@ -51,9 +45,6 @@ class ZenodoApiClient
             : ($this->webBaseUrl . '/records/' . $cleanId);
     }
 
-    /**
-     * Validate Personal Access Token and optionally verify Community slug resolution.
-     */
     public function testConnection(?string $communitySlug = null): array
     {
         if ($this->token === '') {
@@ -110,9 +101,6 @@ class ZenodoApiClient
         ];
     }
 
-    /**
-     * Resolve Zenodo Community slug (e.g. "kisibsmk") into its InvenioRDM UUID.
-     */
     public function resolveCommunityUuid(string $slugOrUuid): ?string
     {
         $clean = trim($slugOrUuid);
@@ -130,7 +118,7 @@ class ZenodoApiClient
                 return $cached;
             }
         } catch (\Throwable $e) {
-            // Fall through to live lookup
+
         }
 
         $resp = $this->requestJson('GET', '/communities/' . rawurlencode($clean), null, false);
@@ -142,15 +130,12 @@ class ZenodoApiClient
         try {
             Cache::put($cacheKey, $uuid, 86400);
         } catch (\Throwable $e) {
-            // Non-fatal
+
         }
 
         return $uuid;
     }
 
-    /**
-     * Create a new Zenodo InvenioRDM draft record, automatically retrying without ROR IDs if Zenodo's ROR vocab lags.
-     */
     public function createDraft(array $payload): array
     {
         try {
@@ -163,9 +148,6 @@ class ZenodoApiClient
         }
     }
 
-    /**
-     * Update metadata of an existing Zenodo draft record.
-     */
     public function updateDraft(string $recordId, array $payload): array
     {
         $encId = rawurlencode($recordId);
@@ -184,9 +166,6 @@ class ZenodoApiClient
         return $this->requestJson('GET', '/records/' . rawurlencode($recordId) . '/draft');
     }
 
-    /**
-     * Pre-reserve an official Zenodo DOI for an existing draft record.
-     */
     public function reserveDoi(string $recordId): array
     {
         $encId = rawurlencode($recordId);
@@ -208,9 +187,6 @@ class ZenodoApiClient
         ];
     }
 
-    /**
-     * List all files currently attached to a draft record.
-     */
     public function listDraftFiles(string $recordId): array
     {
         $encId = rawurlencode($recordId);
@@ -219,9 +195,6 @@ class ZenodoApiClient
         return is_array($entries) ? $entries : [];
     }
 
-    /**
-     * Delete a file from a draft record (e.g., removing temporary Production DOCX before uploading final PDF).
-     */
     public function deleteDraftFile(string $recordId, string $fileKey): void
     {
         $encId = rawurlencode($recordId);
@@ -231,23 +204,16 @@ class ZenodoApiClient
         ]);
     }
 
-    /**
-     * Upload a binary file into an InvenioRDM draft record using the 3-step files lifecycle.
-     *
-     * @param resource|string $streamOrBinaryFilePath
-     */
     public function uploadDraftFile(string $recordId, string $fileName, $streamOrBinaryFilePath, ?int $sizeBytes = null): array
     {
         $encId = rawurlencode($recordId);
         $cleanKey = preg_replace('/[^\w\s.\-()]/u', '_', basename($fileName)) ?: ('article_' . $recordId . '.bin');
         $encKey = rawurlencode($cleanKey);
 
-        // 1. Initialize file slot in draft
         $this->requestJson('POST', "/records/{$encId}/draft/files", [
             ['key' => $cleanKey],
         ]);
 
-        // 2. Stream binary content
         $openedLocally = false;
         if (is_resource($streamOrBinaryFilePath)) {
             $stream = $streamOrBinaryFilePath;
@@ -271,13 +237,9 @@ class ZenodoApiClient
             }
         }
 
-        // 3. Commit uploaded file
         return $this->requestJson('POST', "/records/{$encId}/draft/files/{$encKey}/commit", new \stdClass());
     }
 
-    /**
-     * Publish a draft record, automatically routing & accepting into the configured Zenodo Community when set.
-     */
     public function publishDraft(string $recordId, ?string $communityUuid = null): array
     {
         $encId = rawurlencode($recordId);
@@ -333,9 +295,6 @@ class ZenodoApiClient
         return $payload;
     }
 
-    /**
-     * @param array|\stdClass|null $body
-     */
     private function requestJson(string $method, string $endpoint, $body = null, bool $requireAuth = true): array
     {
         $headers = [
@@ -409,9 +368,6 @@ class ZenodoApiClient
         return (string) $responseBody;
     }
 
-    /**
-     * @param resource $stream
-     */
     private function streamPutBinary(string $endpoint, $stream, ?int $sizeBytes = null): void
     {
         if ($this->token === '') {
@@ -435,7 +391,6 @@ class ZenodoApiClient
             throw new RuntimeException('Gagal menginisialisasi cURL untuk upload file ke Zenodo.');
         }
 
-        // If stream is not seekable or size unknown, buffer safely; otherwise stream directly via CURLOPT_UPLOAD
         if ($sizeBytes !== null && $sizeBytes >= 0 && !empty($meta['seekable'])) {
             curl_setopt_array($ch, [
                 CURLOPT_UPLOAD => true,

@@ -1,12 +1,5 @@
 <?php
 
-/**
- * @file plugins/generic/kisiZenodo/classes/ZenodoIntegrityChecker.php
- *
- * Verifies live server file integrity against SHA256SUMS and detects unauthorized/injected files
- * inside `plugins/generic/kisiZenodo` (and `plugins/themes/smkTheme` when present on the server).
- */
-
 namespace APP\plugins\generic\kisiZenodo\classes;
 
 use RecursiveDirectoryIterator;
@@ -26,22 +19,13 @@ class ZenodoIntegrityChecker
         '.gitattributes',
     ];
 
-    /**
-     * Run SHA-256 verification and foreign-file detection on kisiZenodo and (if installed) smkTheme.
-     */
     public function verifyAll(): array
     {
         $zenodoDir = dirname(__DIR__);
-        $pluginsRoot = dirname($zenodoDir, 2);
-        $smkThemeDir = $pluginsRoot . DIRECTORY_SEPARATOR . 'themes' . DIRECTORY_SEPARATOR . 'smkTheme';
 
         $modules = [
             'kisiZenodo' => $this->verifyDirectory('kisiZenodo', $zenodoDir),
         ];
-
-        if (is_dir($smkThemeDir) && is_file($smkThemeDir . DIRECTORY_SEPARATOR . 'SHA256SUMS')) {
-            $modules['smkTheme'] = $this->verifyDirectory('smkTheme', $smkThemeDir);
-        }
 
         $allOk = true;
         $totalVerifiedFiles = 0;
@@ -68,9 +52,6 @@ class ZenodoIntegrityChecker
         ];
     }
 
-    /**
-     * Verify a single plugin directory against its `SHA256SUMS` manifest.
-     */
     public function verifyDirectory(string $label, string $baseDir): array
     {
         $manifestPath = $baseDir . DIRECTORY_SEPARATOR . 'SHA256SUMS';
@@ -128,7 +109,6 @@ class ZenodoIntegrityChecker
             $verifiedCount++;
         }
 
-        // Scan directory recursively to catch any unlisted / injected file (e.g. webshells)
         try {
             $iterator = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator($baseDir, RecursiveDirectoryIterator::SKIP_DOTS)

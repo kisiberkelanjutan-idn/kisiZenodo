@@ -1,5 +1,3 @@
-# Security Hardening: Block direct HTTP access/execution of PHP, templates, configs, and manifests.
-# OJS loads PHP & Smarty files internally from public_html/index.php; only static CSS/JS/images need HTTP access.
 <FilesMatch "(?i)\.(php[0-9]?|phtml|phar|inc|tpl|po|mo|xml|yml|yaml|md|sh|sql|env|bak|swp|log)$|^SHA256SUMS$">
 	<IfModule mod_authz_core.c>
 		Require all denied

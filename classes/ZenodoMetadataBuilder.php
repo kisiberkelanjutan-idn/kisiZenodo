@@ -1,12 +1,5 @@
 <?php
 
-/**
- * @file plugins/generic/kisiZenodo/classes/ZenodoMetadataBuilder.php
- *
- * Maps OJS 3.5 Submission, Publication, Author (with ORCID & ROR), Issue, and Controlled Vocabularies
- * into Zenodo's exact InvenioRDM v1 `/api/records` schema.
- */
-
 namespace APP\plugins\generic\kisiZenodo\classes;
 
 use APP\core\Application;
@@ -19,9 +12,7 @@ use PKP\core\PKPApplication;
 
 class ZenodoMetadataBuilder
 {
-    /**
-     * Build a complete InvenioRDM v1 record payload for creating or updating a Zenodo draft.
-     */
+
     public function buildRecordPayload(
         Submission $submission,
         $publication,
@@ -94,7 +85,7 @@ class ZenodoMetadataBuilder
                     }
                 }
             } catch (\Throwable $e) {
-                // Keep journal title & ISSN if issue lookup fails
+
             }
         }
 
@@ -172,7 +163,6 @@ class ZenodoMetadataBuilder
                     continue;
                 }
 
-                // InvenioRDM requires `family_name` for personal creators (handles single-word Indonesian names safely)
                 $personOrOrg = [
                     'type' => 'personal',
                 ];
@@ -219,9 +209,6 @@ class ZenodoMetadataBuilder
         return $creators;
     }
 
-    /**
-     * Extract OJS 3.5 structured affiliations (including ROR IDs) as well as legacy affiliation strings.
-     */
     private function extractAuthorAffiliations($author, string $locale): array
     {
         $result = [];
@@ -254,7 +241,6 @@ class ZenodoMetadataBuilder
             $result[] = $item;
         };
 
-        // 1. OJS 3.5 structured Affiliation entities (when present)
         if (method_exists($author, 'getAffiliations')) {
             try {
                 $affObjs = $author->getAffiliations();
@@ -273,11 +259,10 @@ class ZenodoMetadataBuilder
                     }
                 }
             } catch (\Throwable $e) {
-                // Fall back safely below
+
             }
         }
 
-        // 2. Legacy / fallback affiliation data on Author
         if (empty($result) && method_exists($author, 'getLocalizedData')) {
             $legacyAff = (string) ($author->getLocalizedData('affiliation', $locale) ?: $author->getLocalizedData('affiliation') ?: '');
             $legacyRor = method_exists($author, 'getData')
@@ -291,9 +276,6 @@ class ZenodoMetadataBuilder
         return $result;
     }
 
-    /**
-     * Extract keywords, subjects, and SDG tags from OJS 3.5 controlled_vocabs & publication_settings.
-     */
     private function buildSubjects($publication): array
     {
         $rawTerms = [];
@@ -320,7 +302,7 @@ class ZenodoMetadataBuilder
                     }
                 }
             } catch (\Throwable $e) {
-                // Non-fatal
+
             }
         }
 

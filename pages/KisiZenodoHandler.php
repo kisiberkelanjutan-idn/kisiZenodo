@@ -1,13 +1,5 @@
 <?php
 
-/**
- * @file plugins/generic/kisiZenodo/pages/KisiZenodoHandler.php
- *
- * Editorial backend dashboard handler (`/index.php/{journal}/kisiZenodo`) integrated into OJS 3.5's
- * native backend sidebar layout for testing Zenodo API connectivity, viewing Production & Published
- * manuscripts, and triggering 1-click DOI pre-reservation or publication.
- */
-
 namespace APP\plugins\generic\kisiZenodo\pages;
 
 use APP\core\Application;
@@ -69,9 +61,6 @@ class KisiZenodoHandler extends Handler
         return parent::authorize($request, $args, $roleAssignments);
     }
 
-    /**
-     * Render the Zenodo DOI Manager dashboard inside OJS 3.5's native backend layout (`layouts/backend.tpl`).
-     */
     public function index($args, $request): void
     {
         $context = $request->getContext();
@@ -291,9 +280,6 @@ class KisiZenodoHandler extends Handler
         $templateMgr->display($this->plugin->getTemplateResource('manager.tpl'));
     }
 
-    /**
-     * POST `/kisiZenodo/testConnection` — Validate active Personal Access Token and Community slug.
-     */
     public function testConnection($args, $request): void
     {
         $context = $request->getContext();
@@ -326,9 +312,6 @@ class KisiZenodoHandler extends Handler
         $this->redirectToIndex($request);
     }
 
-    /**
-     * POST `/kisiZenodo/preReserve` — Manually run or retry Stage 1 (Draft + DOCX upload + Pre-Reserve DOI).
-     */
     public function preReserve($args, $request): void
     {
         $context = $request->getContext();
@@ -364,9 +347,6 @@ class KisiZenodoHandler extends Handler
         $this->redirectToIndex($request);
     }
 
-    /**
-     * POST `/kisiZenodo/publishDoi` — Run Stage 2 (Sync final metadata, swap DOCX -> PDF Galley, & publish to Community).
-     */
     public function publishDoi($args, $request): void
     {
         $context = $request->getContext();

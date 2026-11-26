@@ -1,11 +1,5 @@
 <?php
 
-/**
- * @file plugins/generic/kisiZenodo/classes/ZenodoDepositService.php
- *
- * Orchestrates 2-stage Zenodo DOI reservation (Production DOCX draft) and final PDF Galley publication.
- */
-
 namespace APP\plugins\generic\kisiZenodo\classes;
 
 use APP\core\Services;
@@ -29,9 +23,6 @@ class ZenodoDepositService
         $this->plugin = $plugin;
     }
 
-    /**
-     * Stage 1: Create/reuse Zenodo draft, upload Production `.docx` file, pre-reserve DOI, and assign DOI to OJS Publication.
-     */
     public function preReserveForProduction(Submission $submission, Context $context, bool $forceRetry = false): array
     {
         $contextId = (int) $context->getId();
@@ -99,7 +90,6 @@ class ZenodoDepositService
                 }
             }
 
-            // Clean any previous draft files on retry so upload doesn't collide with an existing key
             foreach ($client->listDraftFiles($recordId) as $entry) {
                 $oldKey = (string) ($entry['key'] ?? '');
                 if ($oldKey !== '') {
@@ -140,10 +130,6 @@ class ZenodoDepositService
         }
     }
 
-    /**
-     * Stage 2: Sync final OJS 3.5 metadata, replace temporary `.docx` with final `.pdf` Galley,
-     * and publish into the configured Zenodo Community (e.g., `kisibsmk`).
-     */
     public function finalizeAndPublish(Submission $submission, $publication, Context $context): array
     {
         $contextId = (int) $context->getId();
@@ -201,7 +187,6 @@ class ZenodoDepositService
 
             $pdfName = $this->resolveSubmissionFileName($pdfFile, 'KisiBSMK_Article_' . $submissionId . '.pdf');
 
-            // Remove temporary Production DOCX (or any stale draft files) when replaceDocxOnPublish is enabled
             $existingDraftFiles = $client->listDraftFiles($recordId);
             foreach ($existingDraftFiles as $entry) {
                 $oldKey = (string) ($entry['key'] ?? '');
@@ -215,7 +200,6 @@ class ZenodoDepositService
 
             $this->uploadSubmissionFileToDraft($client, $recordId, $pdfFile, $pdfName);
 
-            // Ensure DOI is reserved before publishing
             $reserved = $client->reserveDoi($recordId);
             $doiString = $reserved['doi'];
 
@@ -256,9 +240,6 @@ class ZenodoDepositService
         }
     }
 
-    /**
-     * Find the latest `.docx` (or manuscript document) in Production Ready stage (with fallback to Copyedited stage).
-     */
     public function findProductionReadyFile(int $submissionId): ?SubmissionFile
     {
         $stages = [
@@ -283,10 +264,8 @@ class ZenodoDepositService
                 continue;
             }
 
-            // Sort newest first by ID
             usort($files, static fn ($a, $b): int => ((int) $b->getId()) <=> ((int) $a->getId()));
 
-            // Prefer .docx / Word documents first
             foreach ($files as $file) {
                 $path = strtolower((string) $file->getData('path'));
                 $mime = strtolower((string) $file->getData('mimetype'));
@@ -308,9 +287,6 @@ class ZenodoDepositService
         return null;
     }
 
-    /**
-     * Find the primary PDF Galley SubmissionFile attached to a Publication.
-     */
     public function findPdfGalleyFile($publication, int $submissionId): ?SubmissionFile
     {
         $galleys = $publication->getData('galleys') ?? [];
@@ -335,7 +311,6 @@ class ZenodoDepositService
             }
         }
 
-        // Fallback: check PROOF stage PDF files on submission
         try {
             $proofFiles = Repo::submissionFile()
                 ->getCollector()
@@ -350,7 +325,7 @@ class ZenodoDepositService
                 }
             }
         } catch (\Throwable $e) {
-            // Ignore
+
         }
 
         return null;
@@ -405,7 +380,6 @@ class ZenodoDepositService
             return;
         }
 
-        // Fallback to OJS Flysystem service stream
         $fs = Services::get('file')->fs;
         $stream = $fs->readStream($relPath);
         if (!is_resource($stream)) {
@@ -426,9 +400,6 @@ class ZenodoDepositService
         }
     }
 
-    /**
-     * Store or update the DOI on OJS 3.5's `dois` and `publications` tables (supports both 10.5281 and 10.5072 Sandbox prefixes).
-     */
     private function assignDoiToPublication($publication, int $contextId, string $doiString, int $doiStatus): void
     {
         $cleanDoi = trim($doiString);
@@ -485,7 +456,7 @@ class ZenodoDepositService
                     ->update(['doi_id' => $doiId]);
             }
         } catch (\Throwable $e) {
-            // Direct database fallback in case OJS core prefix validation differs from Sandbox 10.5072
+
             $row = DB::table('dois')
                 ->where('context_id', $contextId)
                 ->where('doi', $cleanDoi)
@@ -515,7 +486,7 @@ class ZenodoDepositService
                     $publication->setData('doiObject', $freshDoi);
                 }
             } catch (\Throwable $ignored) {
-                // Ignore in-memory refresh error
+
             }
         }
     }
@@ -574,7 +545,7 @@ class ZenodoDepositService
                 }
             }
         } catch (\Throwable $ignored) {
-            // Never throw inside error logger
+
         }
     }
 }

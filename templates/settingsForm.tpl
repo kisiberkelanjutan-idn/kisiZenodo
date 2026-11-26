@@ -1,8 +1,3 @@
-{**
- * plugins/generic/kisiZenodo/templates/settingsForm.tpl
- *
- * AjaxModal configuration form for Kisi Zenodo DOI Integration Plugin.
- *}
 <script>
 	$(function() {ldelim}
 		$('#kisiZenodoSettingsForm').pkpHandler('$.pkp.controllers.form.AjaxFormHandler');

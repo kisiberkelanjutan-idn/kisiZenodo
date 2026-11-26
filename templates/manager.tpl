@@ -1,8 +1,3 @@
-{**
- * plugins/generic/kisiZenodo/templates/manager.tpl
- *
- * OJS 3.5 Backend Dashboard for Kisi Zenodo DOI Integration (renders inside native OJS sidebar layout).
- *}
 {extends file="layouts/backend.tpl"}
 
 {block name="page"}

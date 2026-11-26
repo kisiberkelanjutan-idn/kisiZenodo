@@ -1,12 +1,5 @@
 <?php
 
-/**
- * @file plugins/generic/kisiZenodo/classes/ZenodoLicenseGuard.php
- *
- * Asymmetric ECDSA P-256 (prime256v1) + SHA-256 activation token verifier for KisiZenodoPlugin.
- * Only the Public Key is embedded in code; Private Key remains strictly offline with the repository owner.
- */
-
 namespace APP\plugins\generic\kisiZenodo\classes;
 
 use APP\core\Application;
@@ -27,9 +20,6 @@ PEM;
         return preg_replace('/\s+/', '', $clean) ?? '';
     }
 
-    /**
-     * Resolve the active OJS hostname (works in both HTTP web requests and CLI/scheduled contexts).
-     */
     public static function resolveCurrentHost($request = null): string
     {
         $candidates = [];
@@ -46,7 +36,7 @@ PEM;
             try {
                 $candidates[] = (string) $request->getServerHost(null, false);
             } catch (\Throwable $e) {
-                // Fall through
+
             }
         }
 
@@ -66,7 +56,7 @@ PEM;
                 }
             }
         } catch (\Throwable $e) {
-            // Ignore
+
         }
 
         foreach ($candidates as $cand) {
@@ -88,9 +78,6 @@ PEM;
         return '';
     }
 
-    /**
-     * Cryptographically verify an Activation Token (`KISI1~<holder>~<domainRule>~<hexSig>`) against the active host.
-     */
     public static function verify(string $rawToken, ?string $currentHost = null): array
     {
         $host = $currentHost !== null
