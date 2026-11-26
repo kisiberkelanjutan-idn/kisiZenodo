@@ -1,9 +1,11 @@
 ---
 deployment:
   tasks:
+    - sha256sum -c SHA256SUMS
     - export DEPLOYPATH=$HOME/public_html/plugins/generic/kisiZenodo
+    - /bin/rm -rf "$DEPLOYPATH"
     - /bin/mkdir -p "$DEPLOYPATH"
-    - /bin/rm -rf "$DEPLOYPATH"/*
-    - /bin/cp -R classes locale pages styles templates index.php KisiZenodoPlugin.php README.md version.xml "$DEPLOYPATH"/
+    - /bin/cp -R classes locale pages styles templates .htaccess index.php KisiZenodoPlugin.php README.md SHA256SUMS version.xml "$DEPLOYPATH"/
     - /bin/find "$DEPLOYPATH" -type d -exec /bin/chmod 755 {} \;
     - /bin/find "$DEPLOYPATH" -type f -exec /bin/chmod 644 {} \;
+    - cd "$DEPLOYPATH" && sha256sum -c SHA256SUMS

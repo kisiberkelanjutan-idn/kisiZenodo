@@ -32,6 +32,18 @@
 			</div>
 		{/if}
 
+		{if $integrity && !$integrity.ok}
+			<div class="kz-alert kz-alert-error">
+				<strong>&#9888; Peringatan Keamanan Integritas File Server:</strong>
+				Terdeteksi perubahan atau file asing di luar manifest resmi <code>SHA256SUMS</code>. Segera jalankan <em>Deploy HEAD Commit</em> ulang dari cPanel Git untuk memulihkan versi bersih:
+				<ul style="margin:6px 0 0 18px; padding:0;">
+					{foreach from=$integrity.issues item=intIssue}
+						<li>{$intIssue|escape}</li>
+					{/foreach}
+				</ul>
+			</div>
+		{/if}
+
 		{if !$ojsDoisEnabled}
 			<div class="kz-alert kz-alert-warn">
 				<strong>Modul DOI bawaan OJS belum diaktifkan.</strong>
@@ -71,6 +83,17 @@
 				<span class="kz-pill kz-pill-neutral">
 					Auto Publish (.pdf): <strong>{if $autoPublish}ON{else}OFF{/if}</strong>
 				</span>
+				{if $integrity}
+					{if $integrity.ok}
+						<span class="kz-pill kz-pill-prod" title="Seluruh file aktif di server cocok 100% dengan SHA256SUMS resmi dan bebas file sisipan">
+							&#10003; Integritas Server: {$integrity.summaryLabel|escape}
+						</span>
+					{else}
+						<span class="kz-pill kz-pill-err">
+							&#9888; Integritas Server: Perlu Dicek!
+						</span>
+					{/if}
+				{/if}
 			</div>
 
 			<form method="post" action="{$urls.testConnection|escape}" style="margin:0;">

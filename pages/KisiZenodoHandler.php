@@ -16,6 +16,7 @@ use APP\handler\Handler;
 use APP\plugins\generic\kisiZenodo\classes\migration\KisiZenodoMigration;
 use APP\plugins\generic\kisiZenodo\classes\ZenodoApiClient;
 use APP\plugins\generic\kisiZenodo\classes\ZenodoDepositService;
+use APP\plugins\generic\kisiZenodo\classes\ZenodoIntegrityChecker;
 use APP\plugins\generic\kisiZenodo\KisiZenodoPlugin;
 use APP\submission\Submission;
 use APP\template\TemplateManager;
@@ -244,6 +245,7 @@ class KisiZenodoHandler extends Handler
 
         $userRoles = (array) $this->getAuthorizedContextObject(Application::ASSOC_TYPE_USER_ROLES);
         $canManageDois = (bool) array_intersect([Role::ROLE_ID_SITE_ADMIN, Role::ROLE_ID_MANAGER], $userRoles);
+        $integrity = (new ZenodoIntegrityChecker())->verifyAll();
 
         $templateMgr = TemplateManager::getManager($request);
         $templateMgr->addStyleSheet(
@@ -261,6 +263,7 @@ class KisiZenodoHandler extends Handler
             'communitySlug' => $settings['communitySlug'],
             'hasToken' => ($settings['token'] !== ''),
             'ojsDoisEnabled' => $ojsDoisEnabled,
+            'integrity' => $integrity,
             'autoPreReserve' => $settings['autoPreReserve'],
             'autoPublish' => $settings['autoPublish'],
             'replaceDocxOnPublish' => $settings['replaceDocxOnPublish'],

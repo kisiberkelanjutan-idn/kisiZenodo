@@ -116,6 +116,12 @@
 	border-color: #e2e8f0;
 }
 
+.kz-pill-err {
+	background: var(--kz-red-bg);
+	color: var(--kz-red-text);
+	border-color: #fecaca;
+}
+
 .kz-alert {
 	padding: 12px 16px;
 	border-radius: 8px;
