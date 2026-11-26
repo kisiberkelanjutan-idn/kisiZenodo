@@ -130,7 +130,7 @@ class KisiZenodoSettingsForm extends Form
         $this->plugin->updateSetting($this->contextId, 'environment', $env, 'string');
 
         // Preserve existing Sandbox token when password field is left blank unless Clear is ticked
-        $newSandboxToken = trim((string) $this->getData('sandboxToken'));
+        $newSandboxToken = ZenodoApiClient::sanitizeToken((string) $this->getData('sandboxToken'));
         if (!empty($this->getData('clearSandboxToken'))) {
             $this->plugin->updateSetting($this->contextId, 'sandboxToken', '', 'string');
         } elseif ($newSandboxToken !== '') {
@@ -138,7 +138,7 @@ class KisiZenodoSettingsForm extends Form
         }
 
         // Preserve existing Production token when password field is left blank unless Clear is ticked
-        $newProdToken = trim((string) $this->getData('productionToken'));
+        $newProdToken = ZenodoApiClient::sanitizeToken((string) $this->getData('productionToken'));
         if (!empty($this->getData('clearProductionToken'))) {
             $this->plugin->updateSetting($this->contextId, 'productionToken', '', 'string');
         } elseif ($newProdToken !== '') {

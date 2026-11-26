@@ -28,7 +28,14 @@ class ZenodoApiClient
             ? 'https://zenodo.org'
             : 'https://sandbox.zenodo.org';
         $this->baseUrl = $this->webBaseUrl . '/api';
-        $this->token = trim($token);
+        $this->token = self::sanitizeToken($token);
+    }
+
+    public static function sanitizeToken(string $rawToken): string
+    {
+        $clean = trim($rawToken, " \t\n\r\0\x0B\"'");
+        $clean = (string) preg_replace('/^Bearer\s+/i', '', $clean);
+        return preg_replace('/\s+/', '', $clean) ?? '';
     }
 
     public function getWebBaseUrl(): string
@@ -53,7 +60,37 @@ class ZenodoApiClient
             throw new RuntimeException('Personal Access Token kosong.');
         }
 
-        $this->requestJson('GET', '/user/records?size=1');
+        try {
+            $this->requestJson('GET', '/user/records?size=1');
+        } catch (RuntimeException $e) {
+            if (str_contains($e->getMessage(), 'HTTP 403') || str_contains($e->getMessage(), 'HTTP 401')) {
+                $otherEnv = ($this->environment === self::ENV_PRODUCTION)
+                    ? self::ENV_SANDBOX
+                    : self::ENV_PRODUCTION;
+                $otherClient = new self($otherEnv, $this->token);
+                try {
+                    $otherClient->requestJson('GET', '/user/records?size=1');
+                    $currentLabel = strtoupper($this->environment) . " ({$this->webBaseUrl})";
+                    $otherLabel = strtoupper($otherEnv) . " ({$otherClient->getWebBaseUrl()})";
+                    throw new RuntimeException(
+                        "Token terdeteksi milik {$otherLabel}, tetapi mode aktif plugin saat ini adalah {$currentLabel}. "
+                        . "Buka Settings plugin untuk menyesuaikan Mode Environment atau buat token baru di {$this->webBaseUrl}."
+                    );
+                } catch (RuntimeException $probeErr) {
+                    if (str_contains($probeErr->getMessage(), 'Token terdeteksi milik')) {
+                        throw $probeErr;
+                    }
+                }
+
+                throw new RuntimeException(
+                    $e->getMessage()
+                    . " — Penyebab umum di Zenodo: (1) Token dibuat di zenodo.org tetapi dipakai di mode Sandbox (atau sebaliknya), "
+                    . "(2) Email akun Zenodo/Sandbox belum diverifikasi (cek kotak masuk email Anda), atau "
+                    . "(3) Token tidak tersalin utuh / sudah dicabut. Buat ulang Personal Access Token di {$this->webBaseUrl} dengan scope deposit:write & deposit:actions."
+                );
+            }
+            throw $e;
+        }
 
         $communityInfo = null;
         $slug = trim((string) $communitySlug);
