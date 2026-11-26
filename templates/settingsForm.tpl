@@ -44,6 +44,13 @@
 		display: inline-block; background: #f1f5f9; color: #64748b; font-size: 11.5px;
 		font-weight: 600; padding: 1px 7px; border-radius: 999px; margin-left: 6px;
 	}
+	.kisi-zenodo-cfg .kz-badge-lock {
+		display: inline-block; background: #fee2e2; color: #991b1b; font-size: 11.5px;
+		font-weight: 600; padding: 1px 7px; border-radius: 999px; margin-left: 6px;
+	}
+	.kisi-zenodo-cfg .kz-card-license {
+		border: 1.5px solid #0284c7; background: #f8fafc;
+	}
 	.kisi-zenodo-cfg .kz-check { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
 	.kisi-zenodo-cfg .kz-check input[type="checkbox"] { margin-top: 3px; }
 	.kisi-zenodo-cfg .kz-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -52,6 +59,7 @@
 
 <form class="pkp_form kisi-zenodo-cfg" id="kisiZenodoSettingsForm" method="post" action="{url router=$smarty.const.ROUTE_COMPONENT op="manage" category="generic" plugin=$pluginName verb="settings" save=true}">
 	{csrf}
+	{include file="controllers/notification/inPlaceNotification.tpl" notificationId="kisiZenodoSettingsNotification"}
 
 	<div class="kz-banner">
 		<div>{translate key="plugins.generic.kisiZenodo.settings.intro"}</div>
@@ -60,6 +68,41 @@
 				{translate key="plugins.generic.kisiZenodo.settings.openManager"} &rarr;
 			</a>
 		{/if}
+	</div>
+
+	<div class="kz-card kz-card-license">
+		<h4>&#128273; {translate key="plugins.generic.kisiZenodo.settings.licenseSection"}</h4>
+		<div class="kz-field">
+			<label class="kz-label" for="kz-activation-token">
+				{translate key="plugins.generic.kisiZenodo.settings.activationToken"}
+				{if $isLicensed}
+					<span class="kz-badge-ok">&#10003; {translate key="plugins.generic.kisiZenodo.settings.licenseActive"} ({$licenseInfo.holder|escape} &middot; {$licenseInfo.domainRule|escape})</span>
+				{else}
+					<span class="kz-badge-lock">&#128274; {translate key="plugins.generic.kisiZenodo.settings.licenseLocked"}</span>
+				{/if}
+			</label>
+			<input
+				type="password"
+				id="kz-activation-token"
+				name="activationToken"
+				value=""
+				autocomplete="new-password"
+				placeholder="{if $isLicensed}{translate key="plugins.generic.kisiZenodo.settings.tokenPlaceholderKeep"} ({$activationTokenHint|escape}){else}{translate key="plugins.generic.kisiZenodo.settings.activationPlaceholder"}{/if}"
+			/>
+			<div class="kz-hint">
+				{translate key="plugins.generic.kisiZenodo.settings.licenseHelp"}
+				{if $currentHost} (Domain server: <strong>{$currentHost|escape}</strong>){/if}
+				{if !$isLicensed && $hasActivationToken && $licenseInfo.reason}
+					<br /><span style="color:#b91c1c; font-weight:600;">{$licenseInfo.reason|escape}</span>
+				{/if}
+			</div>
+			{if $hasActivationToken}
+				<label class="kz-check" style="margin-top:6px; font-size:12px; color:#475569;">
+					<input type="checkbox" name="clearActivationToken" value="1" />
+					<span>{translate key="plugins.generic.kisiZenodo.settings.clearActivationToken"}</span>
+				</label>
+			{/if}
+		</div>
 	</div>
 
 	<div class="kz-card">

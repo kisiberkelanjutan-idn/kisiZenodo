@@ -86,6 +86,8 @@ class KisiZenodoHandler extends Handler
         $contextPath = $context->getPath();
         $dispatcher = Application::get()->getDispatcher();
         $settings = $this->plugin->getEffectiveSettings($contextId);
+        $isLicensed = !empty($settings['isLicensed']);
+        $licenseInfo = $settings['licenseInfo'] ?? [];
         $env = $settings['environment'];
         $client = new ZenodoApiClient($env, $settings['token']);
         $service = new ZenodoDepositService($this->plugin);
@@ -98,7 +100,7 @@ class KisiZenodoHandler extends Handler
             $filter = 'all';
         }
 
-        $subIds = DB::table('submissions')
+        $subIds = !$isLicensed ? [] : DB::table('submissions')
             ->where('context_id', $contextId)
             ->where(static function ($q) use ($prodStageId): void {
                 $q->where('stage_id', $prodStageId)
@@ -258,6 +260,8 @@ class KisiZenodoHandler extends Handler
             'pageTitle' => 'plugins.generic.kisiZenodo.managerAction',
             'pageWidth' => TemplateManager::PAGE_WIDTH_WIDE,
             'journalName' => (string) $context->getLocalizedName(),
+            'isLicensed' => $isLicensed,
+            'licenseInfo' => $licenseInfo,
             'environment' => $env,
             'webBaseUrl' => $client->getWebBaseUrl(),
             'communitySlug' => $settings['communitySlug'],
@@ -300,6 +304,11 @@ class KisiZenodoHandler extends Handler
 
         $request->checkCSRF();
         $settings = $this->plugin->getEffectiveSettings((int) $context->getId());
+        if (empty($settings['isLicensed'])) {
+            $this->setFlash($request, 'error', 'Plugin belum diaktifkan: masukkan Activation Token resmi terlebih dahulu.');
+            $this->redirectToIndex($request);
+            return;
+        }
 
         try {
             $client = new ZenodoApiClient($settings['environment'], $settings['token']);

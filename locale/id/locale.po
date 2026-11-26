@@ -29,6 +29,30 @@ msgstr "Konfigurasikan kredensial API Zenodo Sandbox & Production, slug Communit
 msgid "plugins.generic.kisiZenodo.settings.openManager"
 msgstr "Buka Dashboard Manajer DOI Zenodo"
 
+msgid "plugins.generic.kisiZenodo.settings.licenseSection"
+msgstr "Lisensi & Aktivasi Plugin"
+
+msgid "plugins.generic.kisiZenodo.settings.activationToken"
+msgstr "Activation Token"
+
+msgid "plugins.generic.kisiZenodo.settings.licenseActive"
+msgstr "Aktif"
+
+msgid "plugins.generic.kisiZenodo.settings.licenseLocked"
+msgstr "Terkunci — Belum Diaktifkan"
+
+msgid "plugins.generic.kisiZenodo.settings.activationPlaceholder"
+msgstr "Tempel Activation Token resmi (KISI1~...)"
+
+msgid "plugins.generic.kisiZenodo.settings.licenseHelp"
+msgstr "Plugin ini memerlukan Activation Token bertanda tangan kriptografi resmi agar dapat beroperasi pada domain jurnal Anda."
+
+msgid "plugins.generic.kisiZenodo.settings.licenseInvalid"
+msgstr "Activation Token tidak valid atau tidak terdaftar untuk domain server jurnal ini."
+
+msgid "plugins.generic.kisiZenodo.settings.clearActivationToken"
+msgstr "Hapus Activation Token tersimpan"
+
 msgid "plugins.generic.kisiZenodo.settings.environment"
 msgstr "Mode Environment Zenodo Aktif"
 

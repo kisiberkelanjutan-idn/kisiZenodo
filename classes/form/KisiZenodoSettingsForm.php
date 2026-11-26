@@ -3,18 +3,20 @@
 /**
  * @file plugins/generic/kisiZenodo/classes/form/KisiZenodoSettingsForm.php
  *
- * Settings modal form for Kisi Zenodo DOI Integration Plugin.
+ * Settings modal form for Kisi Zenodo DOI Integration Plugin (with cryptographic Activation Token guard).
  */
 
 namespace APP\plugins\generic\kisiZenodo\classes\form;
 
 use APP\core\Application;
 use APP\plugins\generic\kisiZenodo\classes\ZenodoApiClient;
+use APP\plugins\generic\kisiZenodo\classes\ZenodoLicenseGuard;
 use APP\plugins\generic\kisiZenodo\KisiZenodoPlugin;
 use APP\template\TemplateManager;
 use PKP\core\PKPApplication;
 use PKP\form\Form;
 use PKP\form\validation\FormValidatorCSRF;
+use PKP\form\validation\FormValidatorCustom;
 use PKP\form\validation\FormValidatorPost;
 
 class KisiZenodoSettingsForm extends Form
@@ -31,6 +33,20 @@ class KisiZenodoSettingsForm extends Form
 
         $this->addCheck(new FormValidatorPost($this));
         $this->addCheck(new FormValidatorCSRF($this));
+        $this->addCheck(new FormValidatorCustom(
+            $this,
+            'activationToken',
+            FormValidatorCustom::FORM_VALIDATOR_OPTIONAL_VALUE,
+            'plugins.generic.kisiZenodo.settings.licenseInvalid',
+            static function ($value): bool {
+                $clean = ZenodoLicenseGuard::sanitizeToken((string) $value);
+                if ($clean === '') {
+                    return true;
+                }
+                $check = ZenodoLicenseGuard::verify($clean);
+                return (bool) $check['valid'];
+            }
+        ));
     }
 
     public function initData(): void
@@ -38,6 +54,11 @@ class KisiZenodoSettingsForm extends Form
         $eff = $this->plugin->getEffectiveSettings($this->contextId);
 
         $this->_data = [
+            'activationToken' => '',
+            'hasActivationToken' => ($eff['activationToken'] !== ''),
+            'isLicensed' => $eff['isLicensed'],
+            'licenseInfo' => $eff['licenseInfo'],
+            'activationTokenHint' => $this->maskTokenSuffix($eff['activationToken']),
             'environment' => $eff['environment'],
             'sandboxToken' => '',
             'hasSandboxToken' => ($eff['sandboxToken'] !== ''),
@@ -58,6 +79,8 @@ class KisiZenodoSettingsForm extends Form
     public function readInputData(): void
     {
         $this->readUserVars([
+            'activationToken',
+            'clearActivationToken',
             'environment',
             'sandboxToken',
             'clearSandboxToken',
@@ -95,6 +118,11 @@ class KisiZenodoSettingsForm extends Form
         $templateMgr->assign([
             'pluginName' => $this->plugin->getName(),
             'managerUrl' => $managerUrl,
+            'hasActivationToken' => ($eff['activationToken'] !== ''),
+            'isLicensed' => $eff['isLicensed'],
+            'licenseInfo' => $eff['licenseInfo'],
+            'currentHost' => ZenodoLicenseGuard::resolveCurrentHost($request),
+            'activationTokenHint' => $this->maskTokenSuffix($eff['activationToken']),
             'environment' => $this->getData('environment') ?: $eff['environment'],
             'sandboxCommunity' => $this->getData('sandboxCommunity') ?? $eff['sandboxCommunity'],
             'productionCommunity' => $this->getData('productionCommunity') ?? $eff['productionCommunity'],
@@ -123,6 +151,13 @@ class KisiZenodoSettingsForm extends Form
 
     public function execute(...$functionArgs)
     {
+        $newActivationToken = ZenodoLicenseGuard::sanitizeToken((string) $this->getData('activationToken'));
+        if (!empty($this->getData('clearActivationToken'))) {
+            $this->plugin->updateSetting($this->contextId, 'activationToken', '', 'string');
+        } elseif ($newActivationToken !== '') {
+            $this->plugin->updateSetting($this->contextId, 'activationToken', $newActivationToken, 'string');
+        }
+
         $env = ($this->getData('environment') === ZenodoApiClient::ENV_PRODUCTION)
             ? ZenodoApiClient::ENV_PRODUCTION
             : ZenodoApiClient::ENV_SANDBOX;

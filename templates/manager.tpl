@@ -44,6 +44,25 @@
 			</div>
 		{/if}
 
+		{if !$isLicensed}
+			<div class="kz-card" style="padding:36px 28px; text-align:center; max-width:680px; margin:24px auto;">
+				<div style="font-size:38px; line-height:1; margin-bottom:12px;">&#128274;</div>
+				<h2 style="margin:0 0 8px; font-size:19px; color:#0f172a;">Plugin Terkunci &mdash; Membutuhkan Activation Token</h2>
+				<p style="margin:0 auto 18px; color:#475569; max-width:540px; font-size:14px;">
+					Seluruh otomatisasi DOI Zenodo dan dashboard manajemen naskah dinonaktifkan sampai <strong>Activation Token</strong> resmi dari <strong>PT Karya Inovasi Berkelanjutan</strong> dimasukkan pada pengaturan plugin.
+					{if $licenseInfo.currentHost}
+						<br /><span style="font-size:12.5px; color:#64748b;">Domain terdeteksi: <code>{$licenseInfo.currentHost|escape}</code></span>
+					{/if}
+					{if $licenseInfo.reason && $licenseInfo.reason !== 'Activation Token belum diisi.'}
+						<br /><span style="font-size:12.5px; color:#b91c1c; font-weight:600;">{$licenseInfo.reason|escape}</span>
+					{/if}
+				</p>
+				<a class="kz-btn kz-btn-blue" style="width:auto; padding:10px 20px;" href="{$urls.pluginsSettings|escape}">
+					&#128273; Buka Pengaturan Plugin &amp; Masukkan Activation Token &rarr;
+				</a>
+			</div>
+		{else}
+
 		{if !$ojsDoisEnabled}
 			<div class="kz-alert kz-alert-warn">
 				<strong>Modul DOI bawaan OJS belum diaktifkan.</strong>
@@ -94,6 +113,9 @@
 						</span>
 					{/if}
 				{/if}
+				<span class="kz-pill kz-pill-prod" title="Lisensi kriptografi plugin terverifikasi aktif">
+					&#128273; Lisensi Aktif ({$licenseInfo.holder|escape})
+				</span>
 			</div>
 
 			<form method="post" action="{$urls.testConnection|escape}" style="margin:0;">
@@ -256,5 +278,6 @@
 				</div>
 			{/if}
 		</div>
+		{/if}
 	</div>
 {/block}

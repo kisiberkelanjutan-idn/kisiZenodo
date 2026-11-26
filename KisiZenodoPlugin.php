@@ -28,6 +28,7 @@ use APP\plugins\generic\kisiZenodo\classes\form\KisiZenodoSettingsForm;
 use APP\plugins\generic\kisiZenodo\classes\migration\KisiZenodoMigration;
 use APP\plugins\generic\kisiZenodo\classes\ZenodoApiClient;
 use APP\plugins\generic\kisiZenodo\classes\ZenodoDepositService;
+use APP\plugins\generic\kisiZenodo\classes\ZenodoLicenseGuard;
 use APP\plugins\generic\kisiZenodo\pages\KisiZenodoHandler;
 use APP\submission\Submission;
 use APP\template\TemplateManager;
@@ -137,7 +138,15 @@ class KisiZenodoPlugin extends GenericPlugin
         $rawReplaceDocx = $this->getSetting($contextId, 'replaceDocxOnPublish');
         $replaceDocxOnPublish = ($rawReplaceDocx === null) ? true : (bool) $rawReplaceDocx;
 
+        $activationToken = ZenodoLicenseGuard::sanitizeToken(
+            (string) ($this->getSetting($contextId, 'activationToken') ?? '')
+        );
+        $licenseInfo = ZenodoLicenseGuard::verify($activationToken);
+
         return [
+            'activationToken' => $activationToken,
+            'isLicensed' => (bool) $licenseInfo['valid'],
+            'licenseInfo' => $licenseInfo,
             'environment' => $env,
             'token' => ($env === ZenodoApiClient::ENV_PRODUCTION) ? $productionToken : $sandboxToken,
             'communitySlug' => ($env === ZenodoApiClient::ENV_PRODUCTION) ? $productionCommunity : $sandboxCommunity,
@@ -186,7 +195,7 @@ class KisiZenodoPlugin extends GenericPlugin
             }
 
             $settings = $this->getEffectiveSettings($contextId);
-            if (empty($settings['autoPreReserve']) || $settings['token'] === '') {
+            if (empty($settings['isLicensed']) || empty($settings['autoPreReserve']) || $settings['token'] === '') {
                 return Hook::CONTINUE;
             }
 
@@ -240,7 +249,7 @@ class KisiZenodoPlugin extends GenericPlugin
             }
 
             $settings = $this->getEffectiveSettings($contextId);
-            if (empty($settings['autoPublish']) || $settings['token'] === '') {
+            if (empty($settings['isLicensed']) || empty($settings['autoPublish']) || $settings['token'] === '') {
                 return Hook::CONTINUE;
             }
 

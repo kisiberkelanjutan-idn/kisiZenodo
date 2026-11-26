@@ -29,6 +29,30 @@ msgstr "Configure Zenodo Sandbox and Production API credentials, target Communit
 msgid "plugins.generic.kisiZenodo.settings.openManager"
 msgstr "Open Zenodo DOI Manager Dashboard"
 
+msgid "plugins.generic.kisiZenodo.settings.licenseSection"
+msgstr "Plugin License & Activation"
+
+msgid "plugins.generic.kisiZenodo.settings.activationToken"
+msgstr "Activation Token"
+
+msgid "plugins.generic.kisiZenodo.settings.licenseActive"
+msgstr "Active"
+
+msgid "plugins.generic.kisiZenodo.settings.licenseLocked"
+msgstr "Locked — Activation Required"
+
+msgid "plugins.generic.kisiZenodo.settings.activationPlaceholder"
+msgstr "Paste official Activation Token (KISI1~...)"
+
+msgid "plugins.generic.kisiZenodo.settings.licenseHelp"
+msgstr "This plugin requires an official cryptographically signed Activation Token bound to your journal domain to operate."
+
+msgid "plugins.generic.kisiZenodo.settings.licenseInvalid"
+msgstr "The Activation Token is invalid or is not authorized for this journal server domain."
+
+msgid "plugins.generic.kisiZenodo.settings.clearActivationToken"
+msgstr "Clear saved Activation Token"
+
 msgid "plugins.generic.kisiZenodo.settings.environment"
 msgstr "Active Zenodo Environment"
 

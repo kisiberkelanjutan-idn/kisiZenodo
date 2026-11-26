@@ -37,6 +37,9 @@ class ZenodoDepositService
         $contextId = (int) $context->getId();
         $submissionId = (int) $submission->getId();
         $settings = $this->plugin->getEffectiveSettings($contextId);
+        if (empty($settings['isLicensed'])) {
+            throw new RuntimeException('Plugin belum diaktifkan: masukkan Activation Token resmi pada pengaturan plugin.');
+        }
         $env = $settings['environment'];
 
         $publication = $submission->getCurrentPublication();
@@ -147,6 +150,9 @@ class ZenodoDepositService
         $submissionId = (int) $submission->getId();
         $pubId = (int) $publication->getId();
         $settings = $this->plugin->getEffectiveSettings($contextId);
+        if (empty($settings['isLicensed'])) {
+            throw new RuntimeException('Plugin belum diaktifkan: masukkan Activation Token resmi pada pengaturan plugin.');
+        }
         $env = $settings['environment'];
 
         $existing = $this->getDepositRecord($contextId, $submissionId, $env);
