@@ -86,18 +86,19 @@ class KisiZenodoHandler extends Handler
 
         $prodStageId = defined('WORKFLOW_STAGE_ID_PRODUCTION') ? WORKFLOW_STAGE_ID_PRODUCTION : 5;
         $filter = strtolower(trim((string) ($request->getUserVar('filter') ?? 'all')));
-        if (!in_array($filter, ['all', 'production', 'published', 'error'], true)) {
+        if (!in_array($filter, ['all', 'no_doi', 'production', 'published', 'error'], true)) {
             $filter = 'all';
         }
 
         $subIds = !$isLicensed ? [] : DB::table('submissions')
             ->where('context_id', $contextId)
+            ->where('status', '!=', Submission::STATUS_DECLINED)
             ->where(static function ($q) use ($prodStageId): void {
                 $q->where('stage_id', $prodStageId)
                     ->orWhereIn('status', [Submission::STATUS_PUBLISHED, Submission::STATUS_SCHEDULED]);
             })
             ->orderByDesc('submission_id')
-            ->limit(150)
+            ->limit(200)
             ->pluck('submission_id')
             ->map(static fn ($id): int => (int) $id)
             ->all();
@@ -117,6 +118,7 @@ class KisiZenodoHandler extends Handler
         $items = [];
         $counts = [
             'all' => 0,
+            'no_doi' => 0,
             'production' => 0,
             'published' => 0,
             'error' => 0,
@@ -139,6 +141,10 @@ class KisiZenodoHandler extends Handler
 
             $subStatus = (int) $submission->getData('status');
             $pubStatus = (int) $publication->getData('status');
+            if ($subStatus === Submission::STATUS_DECLINED || $pubStatus === Submission::STATUS_DECLINED) {
+                continue;
+            }
+
             $isPublished = ($subStatus === Submission::STATUS_PUBLISHED || $pubStatus === Submission::STATUS_PUBLISHED);
             $isScheduled = !$isPublished && ($subStatus === Submission::STATUS_SCHEDULED || $pubStatus === Submission::STATUS_SCHEDULED);
             $stageId = (int) $submission->getData('stageId');
@@ -146,31 +152,7 @@ class KisiZenodoHandler extends Handler
             $dep = $depositsBySubId[$subId] ?? null;
             $depStatus = $dep ? (string) $dep->status : 'none';
             $hasError = $dep && !empty($dep->last_error);
-
-            $counts['all']++;
-            if ($isPublished) {
-                $counts['published']++;
-            } elseif ($stageId === $prodStageId || $isScheduled) {
-                $counts['production']++;
-            }
-            if ($hasError || $depStatus === 'error') {
-                $counts['error']++;
-            }
-
-            if ($filter === 'production' && ($isPublished || ($stageId !== $prodStageId && !$isScheduled))) {
-                continue;
-            }
-            if ($filter === 'published' && !$isPublished) {
-                continue;
-            }
-            if ($filter === 'error' && !$hasError && $depStatus !== 'error') {
-                continue;
-            }
-
-            $title = trim(strip_tags((string) $publication->getLocalizedFullTitle())) ?: ('Submission #' . $subId);
-            $authorsStr = method_exists($publication, 'getShortAuthorString')
-                ? (string) $publication->getShortAuthorString()
-                : '';
+            $reservedDoi = $dep ? trim((string) ($dep->reserved_doi ?? '')) : '';
 
             $doiId = (int) ($publication->getData('doiId') ?? 0);
             $currentDoi = '';
@@ -186,6 +168,39 @@ class KisiZenodoHandler extends Handler
             if ($currentDoi === '' && method_exists($publication, 'getDoi')) {
                 $currentDoi = trim((string) $publication->getDoi());
             }
+
+            $hasNoDoi = ($currentDoi === '' && $reservedDoi === '');
+
+            $counts['all']++;
+            if ($hasNoDoi) {
+                $counts['no_doi']++;
+            }
+            if ($isPublished) {
+                $counts['published']++;
+            } elseif ($stageId === $prodStageId || $isScheduled) {
+                $counts['production']++;
+            }
+            if ($hasError || $depStatus === 'error') {
+                $counts['error']++;
+            }
+
+            if ($filter === 'no_doi' && !$hasNoDoi) {
+                continue;
+            }
+            if ($filter === 'production' && ($isPublished || ($stageId !== $prodStageId && !$isScheduled))) {
+                continue;
+            }
+            if ($filter === 'published' && !$isPublished) {
+                continue;
+            }
+            if ($filter === 'error' && !$hasError && $depStatus !== 'error') {
+                continue;
+            }
+
+            $title = trim(strip_tags((string) $publication->getLocalizedFullTitle())) ?: ('Submission #' . $subId);
+            $authorsStr = method_exists($publication, 'getShortAuthorString')
+                ? (string) $publication->getShortAuthorString()
+                : '';
 
             $ojsDoiStatusLabel = match ($ojsDoiStatus) {
                 Doi::STATUS_REGISTERED => 'Registered (Terdaftar)',
@@ -221,7 +236,7 @@ class KisiZenodoHandler extends Handler
                 'ojsDoi' => $currentDoi,
                 'ojsDoiStatusLabel' => $ojsDoiStatusLabel,
                 'depositStatus' => $depStatus,
-                'reservedDoi' => $dep ? (string) ($dep->reserved_doi ?? '') : '',
+                'reservedDoi' => $reservedDoi,
                 'recordId' => $recordId,
                 'zenodoUrl' => $zenodoUrl,
                 'uploadedFilename' => $dep ? (string) ($dep->uploaded_filename ?? '') : '',

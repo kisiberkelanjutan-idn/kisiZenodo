@@ -125,6 +125,9 @@
 			<a class="kz-tab {if $activeFilter === 'all'}active{/if}" href="{$urls.index|escape}?filter=all">
 				Semua ({$counts.all|escape})
 			</a>
+			<a class="kz-tab {if $activeFilter === 'no_doi'}active{/if}" href="{$urls.index|escape}?filter=no_doi">
+				Belum Ada DOI ({$counts.no_doi|escape})
+			</a>
 			<a class="kz-tab {if $activeFilter === 'production'}active{/if}" href="{$urls.index|escape}?filter=production">
 				Tahap Production ({$counts.production|escape})
 			</a>

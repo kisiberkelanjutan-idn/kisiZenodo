@@ -31,6 +31,9 @@ class ZenodoDepositService
         if (empty($settings['isLicensed'])) {
             throw new RuntimeException('Plugin belum diaktifkan: masukkan Activation Token resmi pada pengaturan plugin.');
         }
+        if ((int) $submission->getData('status') === Submission::STATUS_DECLINED) {
+            throw new RuntimeException("Submission #{$submissionId} berstatus Declined dan tidak dapat diproses DOI.");
+        }
         $env = $settings['environment'];
 
         $publication = $submission->getCurrentPublication();
@@ -138,6 +141,9 @@ class ZenodoDepositService
         $settings = $this->plugin->getEffectiveSettings($contextId);
         if (empty($settings['isLicensed'])) {
             throw new RuntimeException('Plugin belum diaktifkan: masukkan Activation Token resmi pada pengaturan plugin.');
+        }
+        if ((int) $submission->getData('status') === Submission::STATUS_DECLINED) {
+            throw new RuntimeException("Submission #{$submissionId} berstatus Declined dan tidak dapat dipublikasikan ke Zenodo.");
         }
         $env = $settings['environment'];
 
