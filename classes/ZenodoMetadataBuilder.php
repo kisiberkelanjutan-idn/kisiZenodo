@@ -278,7 +278,8 @@ class ZenodoMetadataBuilder
 
     private function buildSubjects($publication): array
     {
-        $rawTerms = [];
+        $keywordTerms = [];
+        $subjectTerms = [];
         $pubId = method_exists($publication, 'getId') ? (int) $publication->getId() : 0;
 
         if ($pubId > 0) {
@@ -292,13 +293,19 @@ class ZenodoMetadataBuilder
                         ->join('controlled_vocab_entries as cve', 'cve.controlled_vocab_id', '=', 'cv.controlled_vocab_id')
                         ->join('controlled_vocab_entry_settings as cves', 'cves.controlled_vocab_entry_id', '=', 'cve.controlled_vocab_entry_id')
                         ->where('cv.assoc_id', $pubId)
-                        ->whereIn('cv.symbolic', ['submissionKeyword', 'submissionSubject', 'submissionDiscipline'])
+                        ->whereIn('cv.symbolic', ['submissionKeyword', 'submissionSubject'])
                         ->whereNotNull('cves.setting_value')
                         ->where('cves.setting_value', '!=', '')
-                        ->pluck('cves.setting_value');
+                        ->select('cv.symbolic', 'cves.setting_value')
+                        ->get();
 
-                    foreach ($rows as $val) {
-                        $rawTerms[] = (string) $val;
+                    foreach ($rows as $row) {
+                        $val = (string) ($row->setting_value ?? '');
+                        if ($row->symbolic === 'submissionKeyword') {
+                            $keywordTerms[] = $val;
+                        } elseif ($row->symbolic === 'submissionSubject') {
+                            $subjectTerms[] = $val;
+                        }
                     }
                 }
             } catch (\Throwable $e) {
@@ -306,28 +313,132 @@ class ZenodoMetadataBuilder
             }
         }
 
-        foreach (['keywords', 'subjects'] as $field) {
-            if (method_exists($publication, 'getLocalizedData')) {
-                $this->flattenStrings($publication->getLocalizedData($field), $rawTerms);
-            }
+        if (method_exists($publication, 'getLocalizedData')) {
+            $this->flattenStrings($publication->getLocalizedData('keywords'), $keywordTerms);
+            $this->flattenStrings($publication->getLocalizedData('subjects'), $subjectTerms);
         }
 
         $subjects = [];
         $seen = [];
-        foreach ($rawTerms as $term) {
-            $clean = trim(preg_replace('/\s+/u', ' ', strip_tags($term)));
+
+        $appendUnique = static function (string $raw) use (&$subjects, &$seen): void {
+            $clean = trim(preg_replace('/\s+/u', ' ', strip_tags($raw)));
             if ($clean === '' || strlen($clean) > 200) {
-                continue;
+                return;
             }
             $key = mb_strtolower($clean, 'UTF-8');
             if (isset($seen[$key])) {
-                continue;
+                return;
             }
             $seen[$key] = true;
             $subjects[] = ['subject' => $clean];
+        };
+
+        foreach ($keywordTerms as $kw) {
+            foreach ($this->splitDelimitedTerms($kw) as $part) {
+                if (!$this->hasExplicitEditorPrefix($part)) {
+                    $appendUnique($part);
+                }
+            }
+        }
+
+        foreach ($subjectTerms as $subj) {
+            foreach ($this->splitDelimitedTerms($subj) as $part) {
+                if ($this->isSdgSubject($part)) {
+                    $appendUnique($part);
+                }
+            }
         }
 
         return $subjects;
+    }
+
+    private function splitDelimitedTerms(string $raw): array
+    {
+        $parts = preg_split('/[;|\r\n]+/u', $raw) ?: [];
+        $out = [];
+        foreach ($parts as $p) {
+            $trimmed = trim($p);
+            if ($trimmed !== '') {
+                $out[] = $trimmed;
+            }
+        }
+        return $out;
+    }
+
+    private function hasExplicitEditorPrefix(string $term): bool
+    {
+        return (bool) preg_match(
+            '/^(?:review\s*editors?|academic\s*editors?|handling\s*editors?|section\s*editors?|editors?|reviewers?)\s*:/iu',
+            trim($term)
+        );
+    }
+
+    private function isSdgSubject(string $term): bool
+    {
+        $clean = trim($term);
+        if ($clean === '' || $this->hasExplicitEditorPrefix($clean)) {
+            return false;
+        }
+
+        if (preg_match('/\b(?:sdgs?|tpb)\b/iu', $clean)) {
+            return true;
+        }
+
+        if (preg_match('/\b(?:sustainable\s+development\s+goals?|tujuan\s+pembangunan\s+berkelanjutan)\b/iu', $clean)) {
+            return true;
+        }
+
+        if (preg_match('/\b(?:goals?|targets?|tujuan)\s*(?:#|:|-)?\s*(?:1[0-7]|0?[1-9])(?:\.\d+[a-z]?)?\b/iu', $clean)) {
+            return true;
+        }
+
+        $lower = mb_strtolower($clean, 'UTF-8');
+        $officialSdgTitles = [
+            'no poverty',
+            'zero hunger',
+            'good health and well-being',
+            'good health and wellbeing',
+            'quality education',
+            'gender equality',
+            'clean water and sanitation',
+            'affordable and clean energy',
+            'decent work and economic growth',
+            'industry, innovation and infrastructure',
+            'reduced inequalities',
+            'sustainable cities and communities',
+            'responsible consumption and production',
+            'climate action',
+            'life below water',
+            'life on land',
+            'peace, justice and strong institutions',
+            'partnerships for the goals',
+            'tanpa kemiskinan',
+            'tanpa kelaparan',
+            'kehidupan sehat dan sejahtera',
+            'pendidikan berkualitas',
+            'kesetaraan gender',
+            'air bersih dan sanitasi layak',
+            'energi bersih dan terjangkau',
+            'pekerjaan layak dan pertumbuhan ekonomi',
+            'industri, inovasi dan infrastruktur',
+            'berkurangnya kesenjangan',
+            'kota dan permukiman yang berkelanjutan',
+            'konsumsi dan produksi yang bertanggung jawab',
+            'penanganan perubahan iklim',
+            'ekosistem lautan',
+            'ekosistem daratan',
+            'perdamaian, keadilan dan kelembagaan yang tangguh',
+            'kemitraan untuk mencapai tujuan',
+        ];
+
+        foreach ($officialSdgTitles as $title) {
+            if (str_contains($lower, $title)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function flattenStrings($val, array &$out): void

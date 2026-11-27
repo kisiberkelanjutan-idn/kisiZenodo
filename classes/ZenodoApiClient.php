@@ -277,6 +277,39 @@ class ZenodoApiClient
         return $this->requestJson('POST', "/records/{$encId}/draft/actions/publish", new \stdClass());
     }
 
+    public function updatePublishedRecordMetadata(string $recordId, array $payload): array
+    {
+        $encId = rawurlencode($recordId);
+        try {
+            $editDraft = $this->requestJson('POST', "/records/{$encId}/draft", new \stdClass());
+        } catch (RuntimeException $e) {
+            $editDraft = $this->getDraft($recordId);
+        }
+
+        $mergedPayload = [
+            'access' => $editDraft['access'] ?? $payload['access'],
+            'files' => $editDraft['files'] ?? ['enabled' => true],
+            'pids' => $editDraft['pids'] ?? new \stdClass(),
+            'metadata' => $payload['metadata'],
+            'custom_fields' => array_merge(
+                is_array($editDraft['custom_fields'] ?? null) ? $editDraft['custom_fields'] : [],
+                is_array($payload['custom_fields'] ?? null) ? $payload['custom_fields'] : []
+            ),
+        ];
+
+        try {
+            $this->requestJson('PUT', "/records/{$encId}/draft", $mergedPayload);
+        } catch (RuntimeException $e) {
+            if (stripos($e->getMessage(), 'affiliations') !== false) {
+                $this->requestJson('PUT', "/records/{$encId}/draft", $this->stripAffiliationIds($mergedPayload));
+            } else {
+                throw $e;
+            }
+        }
+
+        return $this->requestJson('POST', "/records/{$encId}/draft/actions/publish", new \stdClass());
+    }
+
     private function stripAffiliationIds(array $payload): array
     {
         if (!empty($payload['metadata']['creators']) && is_array($payload['metadata']['creators'])) {

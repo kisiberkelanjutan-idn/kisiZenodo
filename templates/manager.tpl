@@ -260,9 +260,21 @@
 													</button>
 												</form>
 											{else}
-												<a class="kz-btn kz-btn-outline" href="https://doi.org/{$item.reservedDoi|default:$item.ojsDoi|escape}" target="_blank" rel="noopener">
+												<a class="kz-btn kz-btn-outline" style="width:100%;" href="https://doi.org/{$item.reservedDoi|default:$item.ojsDoi|escape}" target="_blank" rel="noopener">
 													Buka DOI Publik &nearr;
 												</a>
+												<form method="post" action="{$urls.syncMetadata|escape}" style="margin:0;">
+													{csrf}
+													<input type="hidden" name="submissionId" value="{$item.id|escape}" />
+													<button
+														type="submit"
+														class="kz-btn kz-btn-blue"
+														{if !$hasToken}disabled{/if}
+														title="Perbarui metadata artikel (Judul, Penulis, Kata Kunci &amp; SDGs) di Zenodo tanpa mengubah file PDF maupun nomor DOI"
+													>
+														&#8635; Sync Ulang Metadata
+													</button>
+												</form>
 											{/if}
 										</div>
 									</td>

@@ -41,6 +41,7 @@ class KisiZenodoHandler extends Handler
             'testConnection',
             'preReserve',
             'publishDoi',
+            'syncMetadata',
         ]);
     }
 
@@ -55,7 +56,7 @@ class KisiZenodoHandler extends Handler
         $this->addPolicy(new RoleBasedHandlerOperationPolicy(
             $request,
             $allowedRoles,
-            ['index', 'testConnection', 'preReserve', 'publishDoi']
+            ['index', 'testConnection', 'preReserve', 'publishDoi', 'syncMetadata']
         ));
 
         return parent::authorize($request, $args, $roleAssignments);
@@ -272,6 +273,7 @@ class KisiZenodoHandler extends Handler
                 'testConnection' => $dispatcher->url($request, PKPApplication::ROUTE_PAGE, $contextPath, 'kisiZenodo', 'testConnection'),
                 'preReserve' => $dispatcher->url($request, PKPApplication::ROUTE_PAGE, $contextPath, 'kisiZenodo', 'preReserve'),
                 'publishDoi' => $dispatcher->url($request, PKPApplication::ROUTE_PAGE, $contextPath, 'kisiZenodo', 'publishDoi'),
+                'syncMetadata' => $dispatcher->url($request, PKPApplication::ROUTE_PAGE, $contextPath, 'kisiZenodo', 'syncMetadata'),
                 'nativeDois' => ($ojsDoisEnabled && $canManageDois)
                     ? $dispatcher->url($request, PKPApplication::ROUTE_PAGE, $contextPath, 'dois')
                     : '',
@@ -384,6 +386,46 @@ class KisiZenodoHandler extends Handler
                 $request,
                 'error',
                 "Gagal mempublikasikan Submission #{$submissionId} ke Zenodo: " . $e->getMessage()
+            );
+        }
+
+        $this->redirectToIndex($request);
+    }
+
+    public function syncMetadata($args, $request): void
+    {
+        $context = $request->getContext();
+        if (!$context || !$request->isPost()) {
+            $this->redirectToIndex($request);
+            return;
+        }
+
+        $request->checkCSRF();
+        $submissionId = (int) $request->getUserVar('submissionId');
+
+        try {
+            $submission = ($submissionId > 0) ? Repo::submission()->get($submissionId) : null;
+            if (!$submission || (int) $submission->getData('contextId') !== (int) $context->getId()) {
+                throw new \RuntimeException("Submission #{$submissionId} tidak ditemukan pada jurnal ini.");
+            }
+
+            $publication = $submission->getCurrentPublication();
+            if (!$publication) {
+                throw new \RuntimeException("Submission #{$submissionId} tidak memiliki Current Publication.");
+            }
+
+            $service = new ZenodoDepositService($this->plugin);
+            $result = $service->syncPublishedMetadata($submission, $publication, $context);
+            $this->setFlash(
+                $request,
+                'success',
+                "Metadata Zenodo berhasil diperbarui untuk Submission #{$submissionId} (Record #{$result['recordId']}, DOI {$result['doi']} tetap sama)."
+            );
+        } catch (\Throwable $e) {
+            $this->setFlash(
+                $request,
+                'error',
+                "Gagal memperbarui metadata Zenodo pada Submission #{$submissionId}: " . $e->getMessage()
             );
         }
 

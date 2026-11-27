@@ -240,6 +240,53 @@ class ZenodoDepositService
         }
     }
 
+    public function syncPublishedMetadata(Submission $submission, $publication, Context $context): array
+    {
+        $contextId = (int) $context->getId();
+        $submissionId = (int) $submission->getId();
+        $pubId = (int) $publication->getId();
+        $settings = $this->plugin->getEffectiveSettings($contextId);
+        if (empty($settings['isLicensed'])) {
+            throw new RuntimeException('Plugin belum diaktifkan: masukkan Activation Token resmi pada pengaturan plugin.');
+        }
+        $env = $settings['environment'];
+
+        $existing = $this->getDepositRecord($contextId, $submissionId, $env);
+        $recordId = $existing ? trim((string) ($existing->zenodo_record_id ?? '')) : '';
+        if (!$existing || $existing->status !== 'published' || $recordId === '') {
+            throw new RuntimeException("Submission #{$submissionId} belum berstatus Published di Zenodo pada mode {$env}.");
+        }
+
+        try {
+            $client = $this->buildApiClient($settings);
+            $builder = new ZenodoMetadataBuilder();
+            $payload = $builder->buildRecordPayload($submission, $publication, $context, $settings);
+
+            $publishedResp = $client->updatePublishedRecordMetadata($recordId, $payload);
+            $finalDoi = trim((string) ($publishedResp['pids']['doi']['identifier'] ?? $existing->reserved_doi ?? ''));
+
+            if ($finalDoi !== '') {
+                $this->assignDoiToPublication($publication, $contextId, $finalDoi, Doi::STATUS_REGISTERED);
+            }
+
+            $this->upsertDepositRecord($contextId, $submissionId, $env, [
+                'publication_id' => $pubId,
+                'status' => 'published',
+                'last_error' => null,
+                'synced_at' => date('Y-m-d H:i:s'),
+            ]);
+
+            return [
+                'status' => 'published',
+                'doi' => $finalDoi,
+                'recordId' => $recordId,
+            ];
+        } catch (\Throwable $e) {
+            $this->recordError($contextId, $submissionId, $pubId, $env, $e->getMessage(), false);
+            throw $e;
+        }
+    }
+
     public function findProductionReadyFile(int $submissionId): ?SubmissionFile
     {
         $stages = [
