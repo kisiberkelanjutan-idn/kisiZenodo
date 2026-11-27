@@ -79,7 +79,8 @@ class ZenodoIntegrityChecker
                 continue;
             }
             if (preg_match('/^([a-f0-9]{64})\s+\*?(.+)$/i', $trimmed, $m)) {
-                $relPath = str_replace('\\', '/', ltrim(trim($m[2]), './'));
+                $normPath = str_replace('\\', '/', trim($m[2]));
+                $relPath = (string) preg_replace('#^(?:\./)+#', '', $normPath);
                 $expectedHashes[$relPath] = strtolower($m[1]);
             }
         }
